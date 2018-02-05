@@ -1,0 +1,175 @@
+
+
+    <script type="text/javascript" src="vendor/jquery/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="dist_1/js/bootstrapValidator.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#addDishForm')
+        .bootstrapValidator({
+            message: 'This value is not valid',
+            feedbackIcons: {
+                valid: 'glyphicon glyphicon-ok',
+                invalid: 'glyphicon glyphicon-remove',
+                validating: 'glyphicon glyphicon-refresh'
+            },
+            fields: {
+                addDishName: {
+                    validators: {
+                        notEmpty: {
+                            message: 'Dish Name is required'
+                        },
+                        stringLength: {
+                            min: 6,
+                            max: 30,
+                            message: 'Dish Name must be more than 6 and less than 30 characters long'
+                        },
+                        regexp: {
+                            regexp: /^[a-zA-Z0-9-/., ]+$/,
+                            message: 'Dish Name can only consist of alphabetical, number, dot and underscore'
+                        }
+
+                    }
+                },
+                addDishPrice: {
+                    validators: {
+                        notEmpty: {
+                            message: 'Dish Price is required'
+                        },
+                        stringLength: {
+                            min: 2,
+                            max: 5,
+                            message: 'Dish Price must be more than 2 and less than 6 characters long'
+                        },
+                        regexp: {
+                            regexp: /^[0-9.,]+$/,
+                            message: 'Dish Price can only consist of number, dot and comma'
+                        }
+
+                    }
+                },
+                addDishDesc: {
+                  validators: {
+                    notEmpty: {
+                      message: 'Dish Description is required'
+                    },
+                    stringLength: {
+                        min: 20,
+                        max: 199,
+                        message: 'Dish Description must be more than 20 and less than 200 characters long'
+                    },
+                    regexp: {
+                        regexp: /^[a-zA-Z0-9.,/-?! ]+$/,
+                        message: 'Dish Description can only consist of aplhanumeric character'
+                    }
+                  }
+                }
+
+            }
+        })
+
+
+        .on('error.form.bv', function(e) {
+            console.log('error.form.bv');
+
+            // You can get the form instance and then access API
+            var $form = $(e.target);
+            console.log($form.data('bootstrapValidator').getInvalidFields());
+
+            // If you want to prevent the default handler (bootstrapValidator._onError(e))
+            // e.preventDefault();
+        })
+        .on('success.form.bv', function(e) {
+            console.log('success.form.bv');
+
+            // If you want to prevent the default handler (bootstrapValidator._onSuccess(e))
+            // e.preventDefault();
+        })
+        .on('error.field.bv', function(e, data) {
+            console.log('error.field.bv -->', data);
+        })
+        .on('success.field.bv', function(e, data) {
+            console.log('success.field.bv -->', data);
+        })
+        .on('status.field.bv', function(e, data) {
+            // I don't want to add has-success class to valid field container
+            data.element.parents('.form-group').removeClass('has-success');
+
+            // I want to enable the submit button all the time
+            data.bv.disableSubmitButtons();
+        });
+
+     $('#addDishForm')
+        .bootstrapValidator({
+            message: 'This value is not valid',
+            feedbackIcons: {
+                valid: 'glyphicon glyphicon-ok',
+                invalid: 'glyphicon glyphicon-remove',
+                validating: 'glyphicon glyphicon-refresh'
+            },
+            fields: {
+                addDishName: {
+                    validators: {
+                        notEmpty: {
+                            message: 'Dish Name is required'
+                        },
+                        stringLength: {
+                            min: 6,
+                            max: 30,
+                            message: 'Dish Name must be more than 6 and less than 30 characters long'
+                        },
+                        regexp: {
+                            regexp: /^[a-zA-Z0-9-/., ]+$/,
+                            message: 'Dish Name can only consist of alphabetical, number, dot and underscore'
+                        }
+
+                    }
+                },
+                addDishPrice: {
+                    validators: {
+                        notEmpty: {
+                            message: 'Dish Price is required'
+                        },
+                        stringLength: {
+                            min: 2,
+                            max: 5,
+                            message: 'Dish Price must be more than 2 and less than 6 characters long'
+                        },
+                        regexp: {
+                            regexp: /^[0-9.,]+$/,
+                            message: 'Dish Price can only consist of number, dot and comma'
+                        }
+
+                    }
+                },
+                addDishDesc: {
+                  validators: {
+                    notEmpty: {
+                      message: 'Dish Description is required'
+                    },
+                    stringLength: {
+                        min: 20,
+                        max: 199,
+                        message: 'Dish Description must be more than 20 and less than 200 characters long'
+                    },
+                    regexp: {
+                        regexp: /^[a-zA-Z0-9.,/-?! ]+$/,
+                        message: 'Dish Description can only consist of aplhanumeric character'
+                    }
+                  }
+                }
+
+            }
+        })   
+        
+
+    // Validate the form manually
+    $('#addDishBtn').click(function() {
+        $('#defaultForm').bootstrapValidator('validate');
+    });
+
+
+
+});
+
+</script>
