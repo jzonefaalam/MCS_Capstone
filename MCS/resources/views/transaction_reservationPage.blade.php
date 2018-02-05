@@ -343,27 +343,35 @@
                     <h4>Confirmation</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group" style="display:none;">
+                    <div class="form-group">
                         <label class="col-sm-4 control-label">Reservation ID</label>
                         <div class="col-sm-5 input-group" >
-                          <span class="input-group-addon"><i class="fa fa-list" aria-hidden="true"></i></span>
-                          <input type="text" class="form-control" name="approveReservationId" id="approveReservationId" readonly="">
-                          <input type="text" class="form-control" name="totalReservationFee" id="totalReservationFee" readonly="">
-                          <input type="text" class="form-control" name="mailPaymentTerm" id="mailPaymentTerm" readonly="">
-                          <input type="text" class="form-control" name="mailCustomerID" id="mailCustomerID" readonly="">
-                          <input type="text" class="form-control" name="mailEventDate" id="mailEventDate" readonly="">
-                          <input type="text" class="form-control" name="mailEventStartTime" id="mailEventStartTime" readonly="">
-                          <input type="text" class="form-control" name="mailEventEndTime" id="mailEventEndTime" readonly="">
-                          <input type="text" class="form-control" name="mailPackageAvailed" id="mailPackageAvailed" readonly="">
-                          <input type="text" class="form-control" name="mailNumOfGuest" id="mailNumOfGuest" readonly="">
-                          <input type="text" class="form-control" name="mailDishInclusion" id="mailDishInclusion" readonly="">
-                          <input type="text" class="form-control" name="mailDishAdditional" id="mailDishAdditional" readonly="">
-                          <input type="text" class="form-control" name="mailServiceAdditional" id="mailServiceAdditional" readonly="">
-                          <input type="text" class="form-control" name="mailEmployeeAdditional" id="mailEmployeeAdditional" readonly="">
-                          <input type="text" class="form-control" name="mailEquipmentAdditional" id="mailEquipmentAdditional" readonly="">
-                          <input type="text" class="form-control" name="mailEventLocation" id="mailEventLocation" readonly=""> 
-                          <input type="text" class="form-control" name="mailEventName" id="mailEventName" readonly="">
-                          <input type="text" class="form-control" name="mailCustomerName" id="mailCustomerName" readonly="">
+                            <span class="input-group-addon"><i class="fa fa-list" aria-hidden="true"></i></span>
+                            <!-- IDs -->
+                            <input type="text" class="form-control" name="mailReservationID" id="mailReservationID" readonly="">
+                            <input type="text" class="form-control" name="mailCustomerID" id="mailCustomerID" readonly="">
+                            <input type="text" class="form-control" name="mailPackageID" id="mailPackageID" readonly="">
+                            <input type="text" class="form-control" name="mailEventID" id="mailEventID" readonly="">
+
+                            <!-- Customer Details -->
+                            <input type="text" class="form-control" name="mailCustomerName" id="mailCustomerName" readonly="">
+                            <input type="text" class="form-control" name="mailCustomerHomeAddress" id="mailCustomerHomeAddress" readonly="">
+                            <input type="text" class="form-control" name="mailCustomerEmailAddress" id="mailCustomerEmailAddress" readonly="">
+                            <input type="text" class="form-control" name="mailCustomerContactNumber" id="mailCustomerContactNumber" readonly="">
+                            <input type="text" class="form-control" name="mailCustomerBirthDate" id="mailCustomerBirthDate" readonly="">
+
+                            <!-- Event Details -->
+                            <input type="text" class="form-control" name="mailEventName" id="mailEventName" readonly="">
+                            <input type="text" class="form-control" name="mailEventDate" id="mailEventDate" readonly="">
+                            <input type="text" class="form-control" name="mailEventLocation" id="mailEventLocation" readonly="">
+                            <input type="text" class="form-control" name="mailEventGuestCount" id="mailEventGuestCount" readonly="">
+                            <input type="text" class="form-control" name="mailEventStartTime" id="mailEventStartTime" readonly="">
+                            <input type="text" class="form-control" name="mailEventEndTime" id="mailEventEndTime" readonly="">
+                            <input type="text" class="form-control" name="mailEventPaymentTerm" id="mailEventPaymentTerm" readonly="">
+
+                            <!-- Package Details -->
+                            <input type="text" class="form-control" name="mailPackageCost" id="mailPackageCost" readonly="">
+                            <input type="text" class="form-control" name="mailPackageAddOns" id="mailPackageAddOns" readonly="">
                         </div>
                     </div>
                 </div>
@@ -448,20 +456,48 @@
     });
 
     function getReservation(id){
+        // Customer
+        var getCustomerName = document.getElementById('editCustomerName').value;
+        var getCustomerHomeAddress = document.getElementById('editHomeAddress').value;
+        var getCustomerEmailAddress = document.getElementById('editEmailAddress').value;
+        var getCustomerContactNumber = document.getElementById('editContactNumber').value;
+        var getCustomerBirthDate = document.getElementById('editDateOfBirth').value;
+        $('#mailCustomerName').val(getCustomerName);
+        $('#mailCustomerHomeAddress').val(getCustomerHomeAddress);
+        $('#mailCustomerEmailAddress').val(getCustomerEmailAddress);
+        $('#mailCustomerContactNumber').val(getCustomerContactNumber);
+        $('#mailCustomerBirthDate').val(getCustomerBirthDate);
+
+        // Event
+        var getEventName = document.getElementById('editEventName').value;
+        var getEventDate = document.getElementById('editEventDate').value;
+        var getEventLocation = document.getElementById('editEventLocation').value;
+        var getEventGuestCount = document.getElementById('editEventGuestCount').value;
+        var getEventStartTime = document.getElementById('editEventStartTime').value;
+        var getEventEndTime = document.getElementById('editEventEndTime').value;
+        $('#mailEventName').val(getEventName);
+        $('#mailEventDate').val(getEventDate);
+        $('#mailEventLocation').val(getEventLocation);
+        $('#mailEventGuestCount').val(getEventGuestCount);
+        $('#mailEventStartTime').val(getEventStartTime);
+        $('#mailEventEndTime').val(getEventEndTime);
         $.ajax({
-            type: "GET",
-            url:  "/RetrieveReservationID",
-            data: {
-                sdid: id
-            },
-            success: function(data){
-                $('#approveReservationId').val(data['ss'][0]['reservationID']);
+                type: "GET",
+                url:  "/RetrieveReservationID",
+                data: 
+                {
+                    sdid: id
+                },
+                success: function(data){
+                $('#mailReservationID').val(data['ss'][0]['reservationID']);
                 $('#denyReservationId').val(data['ss'][0]['reservationID']);
-            },
-            error: function(xhr){
-                alert($.parseJSON(xhr.responseText)['error']['message']);
-            }                
-        });
+                },
+                error: function(xhr)
+                {
+                    alert("mali");
+                    alert($.parseJSON(xhr.responseText)['error']['message']);
+                }                
+            });
     }
 
     function getReservationDetail(id){
@@ -621,18 +657,13 @@
                         additionalEmployeeFee = 0;
                     }
                     totalFeePerm = totalFeeTemp + additionalDishFee + additionalServiceFee + additionalEmployeeFee + additionalEquipmentFee; 
-                    $('#totalReservationFee').val(totalFeePerm);
-                    $('#mailEventLocation').val(reservationEventLocationVar);
-                    $('#mailPackageAvailed').val(reservationPackageVar);
-                    $('#mailEventDate').val(reservationDateVar);
-                    $('#mailPaymentTerm').val(reservationPaymentTerm);
+                    // Others
+                    $('#mailPackageCost').val(reservationPackageCostVar);
+                    $('#mailPackageID').val(reservationPackageID);
+                    $('#mailPackageAddOns').val(totalFeePerm);
+                    $('#mailEventPaymentTerm').val(reservationPaymentTerm);
                     $('#mailCustomerID').val(customerID);
-                    $('#mailEventDate').val(reservationEventDate);
-                    $('#mailEventStartTime').val(reservationEventTimeVar);
-                    $('#mailEventEndTime').val(reservartionEndTimeVar);
-                    $('#mailNumOfGuest').val(reservationGuestCountVar);
-                    $('#mailEventName').val(reservationEventNameVar);
-                    $('#mailCustomerName').val(customerName);
+                    $('#mailEventID').val(reservationEventID);
                     if( reservationStatus == 2){
                         var x = document.getElementById('confirmationDiv');
                         x.style.display = 'none';

@@ -1469,6 +1469,7 @@
 
             // Others
             $('#mailPackageCost').val(reservationPackageCostVar);
+            $('#mailPackageID').val(reservationPackageID);
             $('#mailPackageAddOns').val(totalFeePerm);
             $('#mailEventPaymentTerm').val(reservationPaymentTerm);
             $('#mailCustomerID').val(customerID);

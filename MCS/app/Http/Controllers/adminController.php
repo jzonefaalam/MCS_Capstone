@@ -79,7 +79,7 @@ class adminController extends Controller
 
         // Save to transaction_tbl
         $transactiontbl = new transaction_tbl;
-        $transactiontbl->transactionStatus = 0;
+        $transactiontbl->transactionStatus = 1;
         $transactiontbl->totalFee = $getReservationFee;
         $transactiontbl->reservationID = $getReservationID;
         $transactiontbl->save();
