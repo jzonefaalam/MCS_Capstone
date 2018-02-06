@@ -342,8 +342,8 @@
                 <div class="modal-header">
                     <h4>Confirmation</h4>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
+                <div class="modal-body" >
+                    <div class="form-group" style="display: none;">
                         <label class="col-sm-4 control-label">Reservation ID</label>
                         <div class="col-sm-5 input-group" >
                             <span class="input-group-addon"><i class="fa fa-list" aria-hidden="true"></i></span>

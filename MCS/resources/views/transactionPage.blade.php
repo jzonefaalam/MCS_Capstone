@@ -2,7 +2,7 @@
 
 @section('content')
 <!-- Content Wrapper. Contains page content -->
-  <div class="content-wrapper">
+<div class="content-wrapper">
   <style>
   .btn-space{
     margin-right: 5px;
@@ -30,11 +30,12 @@
             <div class="col-md-12">
                 <div class="nav-tabs-custom">
                     <ul class="nav nav-tabs">
-                        <li class="active"><a href="#tab_1" data-toggle="tab"> Pending Events</a></li>
-                        <li><a href="#tab_2" data-toggle="tab">On Going Events</a></li>
-                        <li><a href="#tab_3" data-toggle="tab">Pending Payments</a></li>
-                        <li><a href="#tab_4" data-toggle="tab">Cancelled Events</a></li>
-                        <li><a href="#tab_5" data-toggle="tab">Rejected Reservations</a></li>
+                        <li class="active"><a href="#tab_1" data-toggle="tab"> Pending Events</a></li> <!-- Reservation Status = 2  -->
+                        <li><a href="#tab_2" data-toggle="tab">On Going Events</a></li> <!-- Event Date = Today's Date  -->
+                        <li><a href="#tab_3" data-toggle="tab">Payments</a></li> <!-- Transaction Status = 2   -->
+                        <li><a href="#tab_4" data-toggle="tab">Completed Events</a></li> <!-- Transaction Status = 4  -->
+                        <li><a href="#tab_5" data-toggle="tab">Cancelled Events</a></li> <!-- Transaction Status = 3  -->
+                        <li><a href="#tab_6" data-toggle="tab">Rejected Reservations</a></li> <!-- Reservation Status = 3  -->
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane active" id="tab_1">
@@ -43,20 +44,24 @@
                                     <tr>
                                         <th style="display: none;">Transaction #</th>
                                         <th>Event Name</th>
-                                        <th>Customer</th>
-                                        <th>Payment</th>
+                                        <th>Customer Name</th>
+                                        <th>Event Location</th>
                                         <th>Event Date</th>
+                                        <th>Total Fee</th>
+                                        <th>Payment Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->reservationStatus)==0): ?>
+                                        <?php if ((($rrData->reservationStatus)==2) && ($rrData->transactionStatus==1)): ?>
                                             <tr>
                                                 <td style="display: none;">{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
                                                 <td>{{ $rrData->fullName }}</td>
-                                                <td>{{ $rrData->totalFee }}</td>
+                                                <td>{{ $rrData->eventLocation }}</td>
                                                 <td>{{ $rrData->eventDate }}</td>
+                                                <td>{{ $rrData->totalFee }}</td>
+                                                <td>{{ $rrData->transactionStatus }}</td>
                                             </tr>
                                         <?php endif ?>
                                     @endforeach
@@ -76,7 +81,8 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->reservationStatus)==2): ?>
+                                        <?php if (($rrData->reservationStatus)== date("Y-m-d")): ?> 
+                                            <!-- Validation should be on the date of the event not the reservation status. -->
                                             <tr>
                                                 <td style="display: none;">{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
@@ -116,7 +122,7 @@
                             </table>
                         </div>
                         <div class="tab-pane" id="tab_4">
-                            <table id="cancelledEventsTable" class="table table-bordered table-striped dataTable">
+                            <table id="completedEventsTable" class="table table-bordered table-striped dataTable">
                                 <thead>
                                     <tr>
                                         <th style="display: none;">Transaction #</th>
@@ -142,6 +148,32 @@
                             </table>
                         </div>
                         <div class="tab-pane" id="tab_5">
+                            <table id="cancelledEventsTable" class="table table-bordered table-striped dataTable">
+                                <thead>
+                                    <tr>
+                                        <th style="display: none;">Transaction #</th>
+                                        <th>Event Name</th>
+                                        <th>Customer</th>
+                                        <th>Payment</th>
+                                        <th>Event Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($rejectedReservations as $rrData)
+                                        <?php if (($rrData->transactionStatus)==3): ?>
+                                            <tr>
+                                                <td style="display: none;">{{ $rrData->transactionID }}</td>
+                                                <td>{{ $rrData->eventName }}</td>
+                                                <td>{{ $rrData->fullName }}</td>
+                                                <td>{{ $rrData->totalFee }}</td>
+                                                <td>{{ $rrData->eventDate }}</td>
+                                            </tr>
+                                        <?php endif ?>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane" id="tab_6">
                             <table id="rejectedReservationsTable" class="table table-bordered table-striped dataTable">
                                 <thead>
                                     <tr>
@@ -176,44 +208,47 @@
 
 <!-- PAYMENT EVENT Modal -->
 <form id="paymentForm" role="form" method="POST" action="#" class="form-horizontal">
-    <div class="modal fade" id="paymentModal" >
-        <div class="modal-dialog" style="width:70%;">
+    <div class="modal fade" id="paymentModal" style="width:100%;">
+        <div class="modal-dialog" style="width:70%; margin-top:5%; margin-left:17%;">
             <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4>
+                        Payment Details
+                    </h4>
+                </div>
                 <div class="modal-body">
                     {!! csrf_field() !!}
-                    <div class="row" align="center">
-                        <div class="box" style="width:95%;">
-                            <div class="box-body">
-                                <div class="row">
-                                    <div class="col-md-6" align="left">
-                                        <label>Customer Name: </label>
-                                        <div id="paymentModalCustomerName" style="display: inline-block;">
-                                        </div>
-                                        <br>
-                                        <label>Event Name: </label>
-                                        <div id="paymentModalEventName" style="display: inline-block;">     
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6" align="left">
-                                        <label>Contact Number: </label>
-                                        <div id="paymentModalContactNumber" style="display: inline-block;">
-
-                                        </div>
-                                        <br>
-                                        <label>Event Date: </label>
-                                        <div id="paymentModalEventDate" style="display: inline-block;">
-
-                                        </div>
-                                        <input id="paymentModalpaymentTerm" type="text" hidden>
-                                        <input id="paymentModalTransactionID" type="text" style="display: none;">
-                                        <input id="paymentModalPaymentFee" type="text" style="display: none;">
-                                        <input id="paymentModalTransactionFee" type="text" style="display: none;">
-                                    </div>
-                                </div>
+                    <div id="eventCustomerDetail" style="margin-left: 1%;" class="row">
+                        <h4>
+                            Event & Customer Information
+                        </h4>
+                        <div class="col-md-6" align="left">
+                            <label>Customer Name: </label>
+                            <div id="paymentModalCustomerName" style="display: inline-block;">
+                            </div><br>
+                            <label>Event Name: </label>
+                            <div id="paymentModalEventName" style="display: inline-block;">     
                             </div>
                         </div>
+                        <div class="col-md-6" align="left">
+                            <label>Contact Number: </label>
+                            <div id="paymentModalContactNumber" style="display: inline-block;">
+                            </div><br>
+                            <label>Event Date: </label>
+                            <div id="paymentModalEventDate" style="display: inline-block;">
+                            </div>
+                            <input id="paymentModalpaymentTerm" type="text" hidden>
+                            <input id="paymentModalTransactionID" type="text" style="display: none;">
+                            <input id="paymentModalPaymentFee" type="text" style="display: none;">
+                            <input id="paymentModalTransactionFee" type="text" style="display: none;">
+                        </div>
                     </div>
-                    <div class="row">
+                    <hr>
+                    <div id="paymentDetail" style="margin-left: 1%;" class="row">
+                        <h4>
+                            Payment Information
+                        </h4>
                         <table id="paymentDetailTbl" class="table table-striped table-bordered" style="width:95%;">
                             <thead>
                                 <tr>
@@ -238,8 +273,8 @@
 
 <!-- Transaction Modal-->
 <form role="form" method="POST" action="#" class="form-horizontal">
-    <div  class="modal fade" id="transactionModal">
-        <div class="modal-dialog">
+    <div class="modal fade" id="transactionModal" style="width:100%;">
+        <div class="modal-dialog" style="width:70%; margin-top:5%; margin-left:17%;">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -248,58 +283,79 @@
                 <div class="modal-body">
                     {!! csrf_field() !!}
                     <div name="customerDetails">
+                        <h4>Customer Information</h4>
                         <div class="row">
-                            <div class="form-horizontal">
-                                <div class="form-group">
-                                    <label class="control-label col-sm-6" for="email">Customer Name:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parCustomerName" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Customer Number:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parContactNumber" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Event Name:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parEventName" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Event Location:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parEventLocation" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Number of Guests:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parNumberOfGuest" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Availed Package:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parAvailedPackage" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Additional:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parAdditionalItem" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Total Fee:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parTotalFee" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Payment Term:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parPaymentTerm" style="color: red; font-size: 16px"></p>
-                                    </div>
-                                    <label class="control-label col-sm-6" for="email">Payment Status:</label>
-                                    <div class="col-sm-5">
-                                        <p class="form-control-static" id="parPaymentStatus" style="color: red; font-size: 16px"></p>
-                                    </div>
+                            <div class="col-md-6">
+                                <label class="control-label col-sm-6" for="email">Customer Name:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parCustomerName" style="color: red; font-size: 16px"></p>
                                 </div>
-                                <input type="text"  name="parTransactionId" id="parTransactionId" style="display: none;">
-                                <input type="text"  name="parReservationID" id="parReservationID" style="display: none;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="control-label col-sm-6" for="email">Customer Number:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parContactNumber" style="color: red; font-size: 16px"></p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <hr>
+                    <div name="eventDetails">
+                        <h4>Event Information</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="control-label col-sm-6" for="email">Event Name:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parEventName" style="color: red; font-size: 16px"></p>
+                                </div>
+                                <label class="control-label col-sm-6" for="email">Event Location:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parEventLocation" style="color: red; font-size: 16px"></p>
+                                </div>
+                                <label class="control-label col-sm-6" for="email">Number of Guests:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parNumberOfGuest" style="color: red; font-size: 16px"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="control-label col-sm-6" for="email">Availed Package:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parAvailedPackage" style="color: red; font-size: 16px"></p>
+                                </div>
+                                <label class="control-label col-sm-6" for="email">Additional:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parAdditionalItem" style="color: red; font-size: 16px"></p>
+                                </div>
+                                <label class="control-label col-sm-6" for="email">Total Fee: P</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parTotalFee" style="color: red; font-size: 16px"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div name="eventDetails">
+                        <h4>Payment Information</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="control-label col-sm-6" for="email">Payment Term:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parPaymentTerm" style="color: red; font-size: 16px"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="control-label col-sm-6" for="email">Payment Status:</label>
+                                <div class="col-sm-5">
+                                    <p class="form-control-static" id="parPaymentStatus" style="color: red; font-size: 16px"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="text"  name="parTransactionId" id="parTransactionId" style="display: none;">
+                    <input type="text"  name="parReservationID" id="parReservationID" style="display: none;">
                 </div>
                 <div class="modal-footer">
-                    <a data-target="#cancelEventModal" id="cancelBtn" data-toggle="modal" onclick="cancelEvent(document.getElementById('parTransactionId').value);" class="btn btn-app" type="submit" style=" float:right; display:none;">
+                    <a id="cancelBtn" data-toggle="modal" onclick="cancelEvent(document.getElementById('parTransactionId').value);" class="btn btn-app" type="submit" style=" float:right; display:none;">
                         <i class="fa fa-times" ></i> Cancel Event
                     </a>
                     <a class="btn btn-app" id="paymentBtn" onclick="getPayment(document.getElementById('parReservationID').value);" style="float:right; display:none;">
@@ -322,11 +378,14 @@
 <!-- End of Transaction Modals-->
 
 <!-- CANCEL EVENT MODAL -->
-<form role="form" method="POST" action="CancelEvent" class="form-horizontal">
+<form role="form" method="POST" action="/CancelEvent" class="form-horizontal">
     <div class="modal fade" id="cancelEventModal">
         <div class="modal-dialog">
             <div class="modal-content">
-               <div class="modal-body">
+                <div class="modal-header">
+                    <h4>Confirmation</h4>
+                </div>
+                <div class="modal-body">
                     <div class="form-group" style="display:none;">
                         <label class="col-sm-4 control-label">Transaction ID</label>
                         <div class="col-sm-5 input-group" >
@@ -335,12 +394,13 @@
                     </div>
                 </div>
                 {!! csrf_field() !!}
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <div>
-                    <h5> Are you sure you want to cancel this event? </h5>
+                    <h5> <center> Are you sure you want to cancel this event? </center> </h5>
                 </div>
-                <div style="text-align: center;">
-                    <button type="submit" class="btn btn-primary btn-sm">Confirm</button>
-                    <button data-dismiss="modal" class="btn btn-primary btn-sm">Cancel</button>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger btn-sm">Confirm</button>
+                    <button data-dismiss="modal" class="btn btn-default btn-sm">Cancel</button>
                 </div>
             </div>
         </div>
@@ -513,7 +573,7 @@
 </form>
 <!-- End Submit Payment Form-->
 
-  </div>
+</div>
 
 <!-- Scripts -->
 <script src='http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
@@ -795,6 +855,8 @@
             },
             success: function(data){
                 document.getElementById("cancelEventTransactionId").value = data['tdata'][0]['transactionID'];
+                $('#transactionModal').modal('hide');
+                $('#cancelEventModal').modal('show');
             }, 
             error: function(xhr)
             {
@@ -870,6 +932,7 @@
           "info": false,
           "autoWidth": true
         });
+
     });
 </script>
 
@@ -921,8 +984,8 @@
 
 <script>
     $(document).ready(function() {
-        var table = $('#transactionTable').DataTable();
-        $('#transactionTable tbody').on('dblclick', 'tr', function () {
+        var table = $('#pendingEventsTable').DataTable();
+        $('#pendingEventsTable tbody').on('dblclick', 'tr', function () {
             var today = new Date();
             var dd = today.getDate();
             var mm = today.getMonth()+1;
@@ -936,7 +999,7 @@
             var newDate = yyyy+'-'+mm+'-'+dd;
             var data = table.row( this ).data();
             var transactionId = data[0];
-            var eventDate = data[6];
+            var eventDate = data[4];
             var packageID;
             var eventID;
             $.ajax({
@@ -955,48 +1018,38 @@
                     document.getElementById("parAvailedPackage").innerHTML = data['tdata'][0]['packageName'];
                     document.getElementById("parTotalFee").innerHTML = data['tdata'][0]['totalFee'];
                     document.getElementById("parPaymentTerm").innerHTML = data['tdata'][0]['paymentTermName'];
-                    if(data['tdata'][0]['transactionStatus'] == 0){
-                        document.getElementById("parPaymentStatus").innerHTML = "Pending";
-                        document.getElementById('assignBtn').style.display='none';
-                        document.getElementById('paymentBtn').style.display='block';
-                        document.getElementById('assessmentBtn').style.display='none';
-                        document.getElementById('cancelBtn').style.display='block';
+                    var checkDate = new Date(eventDate);
+                    var timeDiff = Math.abs(checkDate.getTime() - today.getTime());
+                    var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    if(diffDays <= 14 ){
+                        if(diffDays <= 7){
+                            if(data['tdata'][0]['transactionStatus'] == 1){
+                                document.getElementById("parPaymentStatus").innerHTML = "Pending";
+                                document.getElementById('assignBtn').style.display='block';
+                                document.getElementById('paymentBtn').style.display='block';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }    
+                        }
+                        else{
+                            if(data['tdata'][0]['transactionStatus'] == 1){
+                                document.getElementById("parPaymentStatus").innerHTML = "Pending";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='block';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                        }
+                        
                     }
-                    if(data['tdata'][0]['transactionStatus'] == 1){
-                        document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
-                        document.getElementById('assignBtn').style.display='none';
-                        document.getElementById('paymentBtn').style.display='none';
-                        document.getElementById('assessmentBtn').style.display='none';
-                        document.getElementById('cancelBtn').style.display='block';
-                    }
-                    if(data['tdata'][0]['transactionStatus'] == 2){
-                        document.getElementById("parPaymentStatus").innerHTML = "Half Paid";
-                        document.getElementById('assignBtn').style.display='none';
-                        document.getElementById('assessmentBtn').style.display='none';
-                        document.getElementById('cancelBtn').style.display='block';
-                        document.getElementById('printBtn').style.display='none';
-                        document.getElementById('paymentBtn').style.display='block';
-                    }
-                    if(data['tdata'][0]['transactionStatus'] == 3){
-                        document.getElementById("parPaymentStatus").innerHTML = "Cancelled";
-                        document.getElementById('assignBtn').style.display='none';
-                        document.getElementById('assessmentBtn').style.display='none';
-                        document.getElementById('cancelBtn').style.display='none';
-                        document.getElementById('printBtn').style.display='none';
-                        document.getElementById('paymentBtn').style.display='none';
-                    }
-                    if(data['tdata'][0]['transactionStatus'] == 4){
-                        document.getElementById("parPaymentStatus").innerHTML = "Finished";
-                        document.getElementById('assessmentBtn').style.display='none';
-                        document.getElementById('assignBtn').style.display='none';
-                        document.getElementById('printBtn').style.display='none';
-                    }
-                    if(data['tdata'][0]['transactionStatus'] == 5){
-                        document.getElementById("parPaymentStatus").innerHTML = "Additional Payment Pending";
-                        document.getElementById('assessmentBtn').style.display='none';
-                        document.getElementById('assignBtn').style.display='none';
-                        document.getElementById('printBtn').style.display='none';
-                        document.getElementById('paymentBtn').style.display='block';
+                    if(diffDays > 14){
+                        if(data['tdata'][0]['transactionStatus'] == 1){
+                            document.getElementById("parPaymentStatus").innerHTML = "Pending";
+                            document.getElementById('assignBtn').style.display='none';
+                            document.getElementById('paymentBtn').style.display='block';
+                            document.getElementById('assessmentBtn').style.display='none';
+                            document.getElementById('cancelBtn').style.display='block';
+                        }
                     }
                     document.getElementById("parNumberOfGuest").innerHTML = data['tdata'][0]['guestCount'];
                     packageID = data['tdata'][0]['packageID'];
@@ -1060,6 +1113,24 @@
                 error: function(xhr){
                     alert($.parseJSON(xhr.responseText)['error']['message']);
                 }                
+            });
+        });
+
+    $('#cancelEventForm').on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: '/CancelEvent',
+                type: 'POST',
+                data: {
+                    id: $('#cancelEventTransactionId').val()
+                },
+                success: function (result) {
+                    alert('success');
+                    window.location.href = "/TransactionPage"
+                },
+                error: function (result) {
+                    console.log(result);
+                }
             });
         });
     });
