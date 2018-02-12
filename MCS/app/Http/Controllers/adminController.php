@@ -63,7 +63,7 @@ class adminController extends Controller
 
         // Save to reservation_tbl
         $reservationtbl = reservation_tbl::find($getReservationID);
-        $reservationtbl->reservationStatus = 2;
+        $reservationtbl->reservationStatus = 3;
         $reservationtbl->save();
 
         // Save to event
@@ -79,7 +79,7 @@ class adminController extends Controller
 
         // Save to transaction_tbl
         $transactiontbl = new transaction_tbl;
-        $transactiontbl->transactionStatus = 1;
+        $transactiontbl->transactionStatus = 1; //Accepted Reservation, Pending for Payment
         $transactiontbl->totalFee = $getReservationFee;
         $transactiontbl->reservationID = $getReservationID;
         $transactiontbl->save();
@@ -96,7 +96,7 @@ class adminController extends Controller
 
         // Save to payment_tbl
         $paymentTerm = $getPaymentTerm;
-        if ($paymentTerm == 1) {
+        if ($paymentTerm == 1) { //Full Payment
             $paymenttbl = new payment_tbl;
             $plusOneWeek = strtotime("+8 day");
             $firstPaymentDate = date('Y-m-d', $plusOneWeek);
@@ -106,7 +106,7 @@ class adminController extends Controller
             $paymenttbl->paymentAmount = $getReservationFee;
             $paymenttbl->save();
         }
-        if ($paymentTerm == 2) {
+        if ($paymentTerm == 2) { //Half Payment
             $halfPayment = $getReservationFee / 2;
             $plusOneWeek = strtotime("+8 day");
             $NewDate=Date('y:m:d', strtotime("+8 days"));
@@ -127,7 +127,7 @@ class adminController extends Controller
             $paymenttbl2->save();
         }
 
-        if ($paymentTerm == 3) {
+        if ($paymentTerm == 3) { //70/30 Payment
             $firstPayment = ($getReservationFee * .7);
             $secondPayment = ($getReservationFee * .3);
             $plusOneWeek = strtotime("+8 day");
@@ -203,7 +203,7 @@ class adminController extends Controller
         // });
         $id = Input::get('denyReservationId');
         $reservationtbl = reservation_tbl::find($id);
-        $reservationtbl->reservationStatus = 3;
+        $reservationtbl->reservationStatus = 2;
         $reservationtbl->save();
 
 
@@ -2712,19 +2712,19 @@ $uomData = DB::table('unitmeasurement_tbl')
 
         if($paymentTermID == 1){
             $transaction = transaction_tbl::find($transactionID);
-            $transaction->transactionStatus = 1;
-            $transaction->save();
-        }
-        if($paymentTermID == 2){
-            $transaction = transaction_tbl::find($transactionID);
             $transaction->transactionStatus = 2;
             $transaction->save();
         }
-        if($paymentTermID == 3){
-            $transaction = transaction_tbl::find($transactionID);
-            $transaction->transactionStatus = 2;
-            $transaction->save();
-        }
+        // if($paymentTermID == 2){
+        //     $transaction = transaction_tbl::find($transactionID);
+        //     $transaction->transactionStatus = 2;
+        //     $transaction->save();
+        // }
+        // if($paymentTermID == 3){
+        //     $transaction = transaction_tbl::find($transactionID);
+        //     $transaction->transactionStatus = 2;
+        //     $transaction->save();
+        // }
         //Save to Transaction_tbl
         return redirect()->back();
     }
