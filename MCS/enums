@@ -6,8 +6,8 @@ RESERVATION_STATUS
 TRANSACTION_STATUS
 	'1' = Pending Transaction
 	'2' = Fully Paid
-	'3'
-	'4'
+	'3' = Half Paid
+	'4' = Complete / Finished
 	'5' = Needs to Pay additional amount due to loss equipment
 	'6' = Denied Reservation
 
@@ -19,3 +19,10 @@ PAYMENT_TERM
 PAYMENT_STATUS
 	'0' = Pending
 	'1' = Paid
+
+PAYMENT_TERM_CHECKER
+	'1' = Full
+	'2' = Additional Full
+	'3' = Half / 70-30 1st
+	'4' = Half / 70-30 2nd
+	'5' = Additional Half / 70-30

@@ -53,7 +53,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if ((($rrData->reservationStatus)==3) && (  ($rrData->transactionStatus==5) || ($rrData->transactionStatus==1) || ($rrData->transactionStatus==2) )): ?>
+                                        <?php if ((($rrData->reservationStatus)==3) && (  ($rrData->transactionStatus==5) || ($rrData->transactionStatus==1) || ($rrData->transactionStatus==2) || ($rrData->transactionStatus==3) )): ?>
                                             <tr>
                                                 <td>{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
@@ -66,6 +66,12 @@
                                                 <?php endif ?>
                                                 <?php if (($rrData->transactionStatus)==2): ?>
                                                     <td><span class="label label-success">Fully Paid</span></td>
+                                                <?php endif ?>
+                                                <?php if (($rrData->transactionStatus)==5): ?>
+                                                    <td><span class="label label-success">Additional Payment</span></td>
+                                                <?php endif ?>
+                                                <?php if (($rrData->transactionStatus)==3): ?>
+                                                    <td><span class="label label-success">Half Paid</span></td>
                                                 <?php endif ?>
                                             </tr>
                                         <?php endif ?>
@@ -139,7 +145,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->reservationStatus)==5): ?>
+                                        <?php if (($rrData->transactionStatus)==4): ?>
                                             <tr>
                                                 <td style="display: none;">{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
@@ -165,7 +171,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->transactionStatus)==3): ?>
+                                        <?php if (($rrData->transactionStatus)==6): ?>
                                             <tr>
                                                 <td style="display: none;">{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
@@ -365,7 +371,7 @@
                     <a id="cancelBtn" data-toggle="modal" onclick="cancelEvent(document.getElementById('parTransactionId').value);" class="btn btn-app" type="submit" style=" float:right; display:none;">
                         <i class="fa fa-times" ></i> Cancel Event
                     </a>
-                    <a class="btn btn-app" id="paymentBtn" onclick="getPayment(document.getElementById('parReservationID').value);" style="float:right; display:none;">
+                    <a class="btn btn-app" id="paymentBtn" style="float:right; display:none;">
                         <i class="fa fa-money"></i> Payment
                     </a>
                     <a class="btn btn-app" id="assessmentBtn" onclick="assessmentEvent(document.getElementById('parTransactionId').value);" style="float:right; display:none;">
@@ -579,7 +585,7 @@
                     <h5> Are you sure you want to submit this payment? </h5>
                 </div>
                 <div style="text-align: center;">
-                    <button onclick="confirmPayment();" class="btn btn-primary btn-sm">Confirm</button>
+                    <button id="confirmPaymentBtn" class="btn btn-primary btn-sm">Confirm</button>
                     <button data-dismiss="modal" class="btn btn-primary btn-sm">Cancel</button>
                 </div>
             </div>
@@ -671,95 +677,378 @@
 
 <script src='http://cdnjs.cloudflare.com/ajax/libs/bootstrap-validator/0.4.5/js/bootstrapvalidator.min.js'></script>
 
+<!-- Tables Initializiation -->
 <script>
-    $("#assignEquipmentBtn").click(function(e){
-        $("#eventModal").modal("hide");
-        var packageID = document.getElementById('assignEquipmentPackageID').value; 
-        var reservationID = document.getElementById('assignEquipmentReservationID').value;
-        $.ajax({
-        type: "GET",
-        url:  "/RetrieveAssignDetail",
-        data: 
-        {
-            sdid: packageID,
-            sendReservationID: reservationID
-        },
-        success: function(data){
-          var itemName, itemQty, itemID, itemRQty;
-          var addItemName, addItemQtyID, addItemID;
-          var addItemCounter = 0;
-          var additionalItemCounter = 0;
-          var tblSDet = $('#equipmentAssignTbl').DataTable();
-          tblSDet.clear();
-          tblSDet.draw(true);
-          for (var i = 0; i < data['rr'].length; i++) {
-            addItemName = "addItemName" + i;
-            addItemID = "addItemID" + i;
-            addItemQtyID = "addItemQtyID" + i;
-            itemID = '<input style="display: none;" name="' + addItemID + '" id="' + addItemID + '" value="' + data['rr'][i]['equipmentID'] + '" />';
-            itemName = data['rr'][i]['equipmentName'];
-            itemQty = '<input required value="0" min="0" max="'+data['rr'][i]['qtyIn'] +'" name="' + addItemQtyID + '" id="' + addItemQtyID + '"type="number" class="col-md-10" >';
-            itemRQty = data['rr'][i]['qtyIn'];
-            tblSDet.row.add([
-              itemName,
-              itemQty,
-              itemRQty,
-              itemID,
-              ]).draw(true);
-            addItemCounter = addItemCounter + 1;
-          }
+  $(function () {
+        $('#paymentDetailTbl').DataTable({
+          "paging": false,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": false,
+          "autoWidth": true
+        });
+        $('#rejectedReservationsTable').DataTable({
+          "paging": true,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": true,
+          "autoWidth": true
+        });
+        $('#pendingEventsTable').DataTable({
+          "paging": true,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": true,
+          "autoWidth": true
+        });
+        $('#onGoingEventsTable').DataTable({
+          "paging": true,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": true,
+          "autoWidth": true
+        });
+        $('#pendingPaymentsTable').DataTable({
+          "paging": true,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": true,
+          "autoWidth": true
+        });
+        $('#completedEventsTable').DataTable({
+          "paging": true,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": true,
+          "autoWidth": true
+        });
+        $('#cancelledEventsTable').DataTable({
+          "paging": true,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": true,
+          "autoWidth": true
+        });
+        $('#equipmentTbl').DataTable({
+          "paging": false,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": false,
+          "autoWidth": true
+        });
+        $('#equipmentAssignTbl').DataTable({
+          "paging": false,
+          "lengthChange": false,
+          "searching": false,
+          "ordering": false,
+          "info": false,
+          "autoWidth": true
+        });
+        $('#equipmentAssessTbl').DataTable({
+            "paging": false,
+            "lengthChange": false,
+            "searching": false,
+            "ordering": false,
+            "info": false,
+            "autoWidth": true
+        });
+    });
+</script>
+<!-- End -->
 
-          for (var i = 0; i < data['tt'].length; i++) {
-            addItemName = "additionalItemName" + i;
-            addItemID = "additionalItemID" + i;
-            addItemQtyID = "additionalItemQtyID" + i;
-            itemID = '<input style="display: none;" name="' + addItemID + '" id="' + addItemID + '" value="' + data['rr'][i]['equipmentID'] + '" />';
-            itemName = "Additional: " + data['rr'][i]['equipmentName'];
-            itemQty = '<input  required name="' + addItemQtyID + '" id="' + addItemQtyID + '"type="number" min="1" max="'+data['tt'][i]['qtyIn'] +'" class="col-md-10" value="' + data['tt'][i]['equipmentAdditionalQty']+ '">';
-            itemRQty = data['tt'][i]['qtyIn'];
-            tblSDet.row.add([
-              itemName,
-              itemQty,
-              itemRQty,
-              itemID
-              ]).draw(true);
-            additionalItemCounter = additionalItemCounter + 1;
-          }
-          document.getElementById('addItemCtr').value = addItemCounter;
-          document.getElementById('additionalItemCtr').value = additionalItemCounter;
-          // alert('zxc');
-          $("#assignEquipmentModal").modal("show"); 
-        },
-        error: function(xhr)
-        {
-            alert("mali");
-            alert($.parseJSON(xhr.responseText)['error']['message']);
-        }                
-      }); 
+<!-- Other Functions -->
+<script>
+    $(document).ready(function() {
+        
+        var table = $('#pendingEventsTable').DataTable();
+        $('#pendingEventsTable tbody').on('dblclick', 'tr', function () {
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth()+1;
+            var yyyy = today.getFullYear();
+            if(dd<10){
+                dd='0'+dd;
+            } 
+            if(mm<10){
+                mm='0'+mm;
+            }
+            var newDate = yyyy+'-'+mm+'-'+dd;
+            var data = table.row( this ).data();
+            var transactionId = data[0];
+            var eventDate = data[4];
+            var packageID;
+            var eventID;
+            $.ajax({
+                type: "GET",
+                url:  "/RetrieveTransaction",
+                data:{     
+                    getId: transactionId
+                },
+                success: function(data){
+                    $('#parTransactionId').val(transactionId);
+                    $('#parReservationID').val(data['tdata'][0]['reservationID']);
+                    $('#parPackageID').val(data['tdata'][0]['packageID']);
+                    document.getElementById("parCustomerName").innerHTML = data['tdata'][0]['fullName'];
+                    document.getElementById("parContactNumber").innerHTML = data['tdata'][0]['cellNum'];
+                    document.getElementById("parEventName").innerHTML = data['tdata'][0]['eventName'];
+                    document.getElementById("parEventLocation").innerHTML = data['tdata'][0]['eventLocation'];
+                    document.getElementById("parAvailedPackage").innerHTML = data['tdata'][0]['packageName'];
+                    document.getElementById("parTotalFee").innerHTML = data['tdata'][0]['totalFee'];
+                    document.getElementById("parPaymentTerm").innerHTML = data['tdata'][0]['paymentTermName'];
+                    var checkDate = new Date(eventDate);
+                    var timeDiff = (checkDate.getTime() - today.getTime());
+                    var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    if(diffDays <= 14 ){
+                        if(diffDays <= 0){
+                            if(data['tdata'][0]['transactionStatus'] == 3){
+                                document.getElementById("parPaymentStatus").innerHTML = "Pending Payment: Half";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='block';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                            if(data['tdata'][0]['transactionStatus'] == 5){
+                                document.getElementById("parPaymentStatus").innerHTML = "Pending Payment: Additional";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='block';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                            if(data['tdata'][0]['transactionStatus'] == 2){
+                                document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='none';
+                                document.getElementById('assessmentBtn').style.display='block';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                        }
+                        if(diffDays >= 1 && diffDays <= 7){
+                            if(data['tdata'][0]['transactionStatus'] == 1){
+                                document.getElementById("parPaymentStatus").innerHTML = "Pending";
+                                document.getElementById('assignBtn').style.display='block';
+                                document.getElementById('paymentBtn').style.display='block';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }    
+                            if(data['tdata'][0]['transactionStatus'] == 2){
+                                document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
+                                document.getElementById('assignBtn').style.display='block';
+                                document.getElementById('paymentBtn').style.display='none';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }  
+                            if(data['tdata'][0]['transactionStatus'] == 3){
+                                document.getElementById("parPaymentStatus").innerHTML = "Half Paid";
+                                document.getElementById('assignBtn').style.display='block';
+                                document.getElementById('paymentBtn').style.display='none';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }      
+                        }
+                        if(diffDays >= 8 && diffDays <= 14){
+                            if(data['tdata'][0]['transactionStatus'] == 1){
+                                 document.getElementById("parPaymentStatus").innerHTML = "Pending";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='block';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                            if(data['tdata'][0]['transactionStatus'] == 2){
+                                document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='none';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                            if(data['tdata'][0]['transactionStatus'] == 3){
+                                document.getElementById("parPaymentStatus").innerHTML = "Half Paid";
+                                document.getElementById('assignBtn').style.display='none';
+                                document.getElementById('paymentBtn').style.display='none';
+                                document.getElementById('assessmentBtn').style.display='none';
+                                document.getElementById('cancelBtn').style.display='none';
+                            }
+                        }
+                        
+                    }
+                    if(diffDays > 14){
+                        if(data['tdata'][0]['transactionStatus'] == 1){
+                            document.getElementById("parPaymentStatus").innerHTML = "Pending";
+                            document.getElementById('assignBtn').style.display='none';
+                            document.getElementById('paymentBtn').style.display='block';
+                            document.getElementById('assessmentBtn').style.display='none';
+                            document.getElementById('cancelBtn').style.display='block';
+                        }
+                        if(data['tdata'][0]['transactionStatus'] == 2){
+                            document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
+                            document.getElementById('assignBtn').style.display='none';
+                            document.getElementById('paymentBtn').style.display='none';
+                            document.getElementById('assessmentBtn').style.display='none';
+                            document.getElementById('cancelBtn').style.display='none';
+                        }
+                    }
+                    document.getElementById("parNumberOfGuest").innerHTML = data['tdata'][0]['guestCount'];
+                    packageID = data['tdata'][0]['packageID'];
+                    eventID = data['tdata'][0]['eventID'];
+                    $.ajax({
+                        type: "GET",
+                        url:  "/RetrievePackageInclusion",
+                        data:{
+                            sdid: packageID,
+                            sendReservationID: eventID
+                        },
+                        success: function(data){
+                            var additionalDishList = new Array;
+                            var additionalServiceList = new Array;
+                            var additionalEmployeeList = new Array;
+                            var additionalEquipmentList = new Array;
+                            if(data['additionalDish'].length > 0){
+                                for (var i = 0; i < data['additionalDish'].length; i++) {
+                                    additionalDishList = "[" + data['additionalDish'][i]['additionalServing'] + "] " + 
+                                    data['additionalDish'][i]['dishName'];
+                                }
+                            }
+                            else{
+                                additionalDishList = "";
+                            }
+                            if(data['additionalService'].length > 0){
+                                for (var i = 0; i < data['additionalService'].length; i++) {
+                                    additionalServiceList = "[" + data['additionalService'][i]['serviceAdditionalQty'] + "] " + 
+                                    data['additionalService'][i]['serviceName'];
+                                }
+                            }
+                            else{
+                                additionalServiceList = "";
+                            }
+                            if(data['additionalEquipment'].length > 0){
+                                for (var i = 0; i < data['additionalEquipment'].length; i++) {
+                                    additionalEquipmentList = "[" + data['additionalEquipment'][i]['equipmentAdditionalQty'] + "] " + 
+                                    data['additionalEquipment'][i]['equipmentName'];
+                                }
+                            }
+                            else{
+                                additionalEquipmentList = "";
+                            }
+                            if(data['additionalEmployee'].length > 0){
+                                for (var i = 0; i < data['additionalEmployee'].length; i++) {
+                                    additionalEmployeeList = "[" + data['additionalEmployee'][i]['employeeAdditionalQty'] + "] " + 
+                                    data['additionalEmployee'][i]['employeeTypeName'];
+                                }
+                            }
+                            else{
+                                additionalEmployeeList = "";
+                            }
+                            document.getElementById("parAdditionalItem").innerHTML = additionalDishList + " " + additionalEquipmentList + " " + additionalServiceList + " " + additionalEmployeeList;
+                            $("#transactionModal").modal("show");
+                        }, 
+                        error: function(xhr){
+                            alert($.parseJSON(xhr.responseText)['error']['message']);
+                        }                
+                    });
+                }, 
+                error: function(xhr){
+                    alert($.parseJSON(xhr.responseText)['error']['message']);
+                }                
+            });
+        });
+
+        $('#cancelEventForm').on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: '/CancelEvent',
+                type: 'POST',
+                data: {
+                    id: $('#cancelEventTransactionId').val()
+                },
+                success: function (result) {
+                    alert('success');
+                    window.location.href = "/TransactionPage"
+                },
+                error: function (result) {
+                    console.log(result);
+                }
+            });
+        });
+
     });
 
-     $("#saveAssessEquipment").click(function(e){
-        var itemCtr = document.getElementById('assessmentItemCtr').value;
-        // var reservationID = document.getElementById('assignModalReservationID').value;
-        var totalAmount = 0;
-        // alert()
-        for (var i = 0; i < itemCtr; i++) {
-        var abc = "assessReturnQty" + i;
-        var x = document.getElementById(abc).value;
-        var bcd = "assessAssignQty" + i; 
-        var xx = document.getElementById(bcd).value;
-        var diff = xx-x;
-        var cde = "assessEquipmentRatePerHour" + i;
-        var xxx = document.getElementById(cde).value;
-        if(diff>0){
-        totalAmount = totalAmount + (xxx * diff);
-        }
-        }
-        document.getElementById('assessmentAdditionalPayment').value = totalAmount;
-    }); 
-</script> 
+</script>
+<!-- End of Scripts -->
 
-<script>
+<script type="text/javascript">
+
+    function full_first(){
+        
+    }
+
+    function full_second(){
+        
+    }
+
+    // Full Payment
+    function submitPayment0(id){
+       
+    }
+
+    //Second Payment
+    function submitPayment1(id){
+        
+    }
+
+    //Second Payment
+    
+
+    function getReservation(id){
+        var frame1 = $('<iframe />');
+        frame1[0].name = "frame1";
+        frame1.css({ "position": "absolute", "top": "-1000000px" });
+        $("body").append(frame1);
+        var frameDoc = frame1[0].contentWindow ? frame1[0].contentWindow : frame1[0].contentDocument.document ? frame1[0].contentDocument.document : frame1[0].contentDocument;
+        frameDoc.document.open();
+        frameDoc.document.write('<html><head>');
+        frameDoc.document.write('</head><body>');
+        frameDoc.document.write('<style> .invoice-box{ max-width:800px; margin:auto; padding:30px; border:1px solid #eee; box-shadow:0 0 10px rgba(0, 0, 0, .15); font-size:16px; line-height:24px; font-family:"Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; color:#555; } .invoice-box table{ width:100%; line-height:inherit; text-align:left; } .invoice-box table td{ padding:5px; vertical-align:top; } .invoice-box table tr td:nth-child(2){ text-align:right; } .invoice-box table tr.top table td{ padding-bottom:20px; } .invoice-box table tr.top table td.title{ font-size:45px; line-height:45px; color:#333; } .invoice-box table tr.information table td{ padding-bottom:40px; } .invoice-box table tr.heading td{ background:#eee; border-bottom:1px solid #ddd; font-weight:bold; } .invoice-box table tr.details td{ padding-bottom:20px; } .invoice-box table tr.item td{ border-bottom:1px solid #eee; } .invoice-box table tr.item.last td{ border-bottom:none; } .invoice-box table tr.total td:nth-child(2){ border-top:2px solid #eee; font-weight:bold; } @media only screen and (max-width: 600px) { .invoice-box table tr.top table td{ width:100%; display:block; text-align:center; } .invoice-box table tr.information table td{ width:100%; display:block; text-align:center; } } </style>');
+        frameDoc.document.write('<html><body> <div > <table cellpadding="0" cellspacing="0"> <tr class="top"> <td colspan="2">   ');
+        frameDoc.document.write('<image src = "logo.png" align = "pullcenter"  width = "130" height = "100" style ="padding-left:10px"> ');
+        frameDoc.document.write('<p align = "Center">Margareth Catering Services </br> ');
+        frameDoc.document.write(' B4 L5 Ph7 JP Rizal St., New San Mateo Subd., Gitnangbayan I, San Mateo, Rizal </br> ');
+        frameDoc.document.write(' 696-4528 | (+63) 928-297-2321 | (+63) 907-208-3331 </br>');
+        frameDoc.document.write(' margarethcateringservices@gmail.com </p></br></br>');
+        frameDoc.document.write(' <p align= "right" style ="padding-right:16%">MM/DD/YYYY</p>');
+        frameDoc.document.write(' <p align = "left" style = "padding-left:20%">');
+        frameDoc.document.write(' Dear (client name),</br></br> ');
+        frameDoc.document.write(' </br>We recieved your inquiry and we would like confirm the agreement made during the phone conversation.</br> ');
+        frameDoc.document.write(' Thank you for making a reservation.');
+        frameDoc.document.write('     Here is the full details of your reservation. Kindly check if all the information is correct.</br>');
+        frameDoc.document.write(' </br></br></br>Event Date: ');
+        frameDoc.document.write(' </br>Event Time: ');
+        frameDoc.document.write(' </br>Event Name:');
+        frameDoc.document.write(' </br>Package Availed:');
+        frameDoc.document.write(' </br>Chosen Dish/Dishes: ');
+        frameDoc.document.write(' </br>Number of Guest:');
+        frameDoc.document.write(' </br>Add-ons:');
+        frameDoc.document.write(' </br>Service Availed:');
+        frameDoc.document.write(' </br>Location:</br>');
+        frameDoc.document.write(' </br>As agreed upon the first payment will be made at (date) and the second payment will be at (date).</br>');
+        frameDoc.document.write(' This letter will serve as our contract. For further question you can reach us in our phone number 696-4528</br>');
+        frameDoc.document.write(' (+63) 928-297-2321 | (+63) 907-208-3331or you can email us at margarethcateringservices@gmail.com</br>');
+        frameDoc.document.write(' </br></br></br>');
+        frameDoc.document.write('</div></body></html>');
+        frameDoc.document.close();
+        setTimeout(function () {
+            window.frames["frame1"].focus();
+            window.frames["frame1"].print();
+            frame1.remove();
+        }, 500);
+    }
+
     function assignEvent(id){
         var reservationID = id;
         var packageID;
@@ -901,43 +1190,118 @@
             }                
         });
     }
-</script>
 
-<script>
-
-    function confirmPayment(){
-        var transactionID = document.getElementById('submitPaymentTransactionID').value;
-        var paymentTermID = document.getElementById('submitPaymentTermID').value;
-        var receiveDate = document.getElementById('submitPaymentReceiveDate').value;
-        var paymentID = document.getElementById('submitPaymentID').value;
+    function cancelEvent(id){
+        var transactionID = id;
         $.ajax({
-            url: "/SavePayment0",
-            type: "POST",
-            beforeSend: function (xhr) {
-                var token = $('meta[name="csrf_token"]').attr('content');
-                if (token) {
-                    return xhr.setRequestHeader('X-CSRF-TOKEN', token);
-                }
+            type: "GET",
+            url:  "/RetrieveTransaction",
+            data:{
+                getId: transactionID
             },
-            data: {
-                sendPaymentID: paymentID,
-                sendReceiveDate: receiveDate,
-                sendPaymentTerm: paymentTermID,
-                sendTransactionID: transactionID,
-                '_token': $('#token').val()
-            },               
-            success: function (response) {
-                location.reload();
-            },
+            success: function(data){
+                document.getElementById("cancelEventTransactionId").value = data['tdata'][0]['transactionID'];
+                $('#transactionModal').modal('hide');
+                $('#cancelEventModal').modal('show');
+            }, 
             error: function(xhr)
             {
-                alert("mali")
-            }                  
+                alert($.parseJSON(xhr.responseText)['error']['message']);
+            }                
         });
     }
+</script>
 
-    function getPayment(id){
-        var reservationID = id;
+<!-- Assessment and Assigning -->
+<script>
+    $("#assignEquipmentBtn").click(function(e){
+        $("#eventModal").modal("hide");
+        var packageID = document.getElementById('assignEquipmentPackageID').value; 
+        var reservationID = document.getElementById('assignEquipmentReservationID').value;
+        $.ajax({
+        type: "GET",
+        url:  "/RetrieveAssignDetail",
+        data: 
+        {
+            sdid: packageID,
+            sendReservationID: reservationID
+        },
+        success: function(data){
+          var itemName, itemQty, itemID, itemRQty;
+          var addItemName, addItemQtyID, addItemID;
+          var addItemCounter = 0;
+          var additionalItemCounter = 0;
+          var tblSDet = $('#equipmentAssignTbl').DataTable();
+          tblSDet.clear();
+          tblSDet.draw(true);
+          for (var i = 0; i < data['rr'].length; i++) {
+            addItemName = "addItemName" + i;
+            addItemID = "addItemID" + i;
+            addItemQtyID = "addItemQtyID" + i;
+            itemID = '<input style="display: none;" name="' + addItemID + '" id="' + addItemID + '" value="' + data['rr'][i]['equipmentID'] + '" />';
+            itemName = data['rr'][i]['equipmentName'];
+            itemQty = '<input required value="0" min="0" max="'+data['rr'][i]['qtyIn'] +'" name="' + addItemQtyID + '" id="' + addItemQtyID + '"type="number" class="col-md-10" >';
+            itemRQty = data['rr'][i]['qtyIn'];
+            tblSDet.row.add([
+              itemName,
+              itemQty,
+              itemRQty,
+              itemID,
+              ]).draw(true);
+            addItemCounter = addItemCounter + 1;
+          }
+
+          for (var i = 0; i < data['tt'].length; i++) {
+            addItemName = "additionalItemName" + i;
+            addItemID = "additionalItemID" + i;
+            addItemQtyID = "additionalItemQtyID" + i;
+            itemID = '<input style="display: none;" name="' + addItemID + '" id="' + addItemID + '" value="' + data['rr'][i]['equipmentID'] + '" />';
+            itemName = "Additional: " + data['rr'][i]['equipmentName'];
+            itemQty = '<input  required name="' + addItemQtyID + '" id="' + addItemQtyID + '"type="number" min="1" max="'+data['tt'][i]['qtyIn'] +'" class="col-md-10" value="' + data['tt'][i]['equipmentAdditionalQty']+ '">';
+            itemRQty = data['tt'][i]['qtyIn'];
+            tblSDet.row.add([
+              itemName,
+              itemQty,
+              itemRQty,
+              itemID
+              ]).draw(true);
+            additionalItemCounter = additionalItemCounter + 1;
+          }
+          document.getElementById('addItemCtr').value = addItemCounter;
+          document.getElementById('additionalItemCtr').value = additionalItemCounter;
+          // alert('zxc');
+          $("#assignEquipmentModal").modal("show"); 
+        },
+        error: function(xhr)
+        {
+            alert("mali");
+            alert($.parseJSON(xhr.responseText)['error']['message']);
+        }                
+      }); 
+    });
+
+    $("#saveAssessEquipment").click(function(e){
+        var itemCtr = document.getElementById('assessmentItemCtr').value;
+        // var reservationID = document.getElementById('assignModalReservationID').value;
+        var totalAmount = 0;
+        // alert()
+        for (var i = 0; i < itemCtr; i++) {
+        var abc = "assessReturnQty" + i;
+        var x = document.getElementById(abc).value;
+        var bcd = "assessAssignQty" + i; 
+        var xx = document.getElementById(bcd).value;
+        var diff = xx-x;
+        var cde = "assessEquipmentRatePerHour" + i;
+        var xxx = document.getElementById(cde).value;
+        if(diff>0){
+        totalAmount = totalAmount + (xxx * diff);
+        }
+        }
+        document.getElementById('assessmentAdditionalPayment').value = totalAmount;
+    });
+
+    $('#paymentBtn').click(function(e){
+        var reservationID = document.getElementById('parReservationID').value;
         $("#transactionModal").modal("hide");
         $.ajax({
             type: "GET",
@@ -978,7 +1342,7 @@
                             if (statusChecker == 0) {
                                 paymentStatus = '<span id="' + addPaymentStatusID + '" class="label label-warning">Pending</span>';
                                 paymentReceiveDate = '<input type="date" required id="' + addPaymentReceiveDate + '" max="{{date('Y-m-d',  strtotime( '+2 month' ))}}" min="{{date('Y-m-d',  strtotime( '+7 day' ))}}">';
-                                paymentActionBtn = '<input type="button" id="' + addPaymentBtnID + '" value="Confirm" onclick=" ' +submitPayment+ '(this.name)" name="'+data['paymentDetail'][i]['paymentID']+'">';
+                                paymentActionBtn = '<button type="button" onclick=" ' +submitPayment+ '(this.name)" name="'+data['paymentDetail'][i]['paymentID']+'">Confirm</button>';
                             }
                             if (statusChecker == 1) {
                                 paymentStatus = '<span id="' + addPaymentStatusID + '" class="label label-success">Confirmed</span>';
@@ -1007,13 +1371,8 @@
                 alert($.parseJSON(xhr.responseText)['error']['message']);
             }                
         });
-    }
-</script>
+    });
 
-<!-- Script for Payment -->
-<script>
-    
-    // Full Payment
     function submitPayment0(id){
         var paymentID0 = id;
         var receiveDate0 = document.getElementById('addPaymentReceiveDate0').value;
@@ -1025,14 +1384,18 @@
         document.getElementById('submitPaymentReceiveDate').value = receiveDate0;
         document.getElementById('submitPaymentTermID').value = paymentTermID;
         document.getElementById('submitPaymentID').value = paymentID0;
-        document.getElementById('submitPaymentChecker').value = 1;
         document.getElementById('submitPaymentFee').value = paymentFee;
         document.getElementById('submitTransactionFee').value = transactionFee;
+        if(paymentTermID == 1){
+            document.getElementById('submitPaymentChecker').value = 1;
+        }
+        if(paymentTermID == 2 || paymentTermID == 3){
+            document.getElementById('submitPaymentChecker').value = 3;
+        }
         $('#paymentModal').modal('hide');
         $('#submitEventModal').modal('show');
     }
 
-    //Second Payment
     function submitPayment1(id){
         var paymentID1 = id;
         var receiveDate1 = document.getElementById('addPaymentReceiveDate1').value;
@@ -1044,12 +1407,18 @@
         document.getElementById('submitPaymentReceiveDate').value = receiveDate1;
         document.getElementById('submitPaymentTermID').value = paymentTermID;
         document.getElementById('submitPaymentID').value = paymentID1;
-        document.getElementById('submitPaymentChecker').value = 2;
         document.getElementById('submitPaymentFee').value = paymentFee;
         document.getElementById('submitTransactionFee').value = transactionFee;
+        if(paymentTermID == 1){
+            document.getElementById('submitPaymentChecker').value = 2;
+        }
+        if(paymentTermID == 2 || paymentTermID == 3){
+            document.getElementById('submitPaymentChecker').value = 4;
+        }
+        $('#paymentModal').modal('hide');
+        $('#submitEventModal').modal('show');
     }
 
-    //Second Payment
     function submitPayment2(id){
         var paymentID2 = id;
         var receiveDate2 = document.getElementById('addPaymentReceiveDate2').value;
@@ -1061,339 +1430,52 @@
         document.getElementById('submitPaymentReceiveDate').value = receiveDate2;
         document.getElementById('submitPaymentTermID').value = paymentTermID;
         document.getElementById('submitPaymentID').value = paymentID2;
-        document.getElementById('submitPaymentChecker').value = 3;
         document.getElementById('submitPaymentFee').value = paymentFee;
         document.getElementById('submitTransactionFee').value = transactionFee;
+        if(paymentTermID == 2 || paymentTermID == 3){
+            document.getElementById('submitPaymentChecker').value = 5;
+        }
+        $('#paymentModal').modal('hide');
+        $('#submitEventModal').modal('show');
     }
-</script>
 
-<script>
-    function cancelEvent(id){
-        var transactionID = id;
+    $('#confirmPaymentBtn').click(function(e){
+        var transactionID = document.getElementById('submitPaymentTransactionID').value;
+        var paymentTermID = document.getElementById('submitPaymentTermID').value;
+        var receiveDate = document.getElementById('submitPaymentReceiveDate').value;
+        var paymentID = document.getElementById('submitPaymentID').value;
+        var checker = document.getElementById('submitPaymentChecker').value;
+        var transactionFee = document.getElementById('submitTransactionFee').value;
+        var paymentFee = document.getElementById('submitPaymentFee').value;
         $.ajax({
-            type: "GET",
-            url:  "/RetrieveTransaction",
-            data:{
-                getId: transactionID
+            url: "/SavePayment",
+            type: "POST",
+            beforeSend: function (xhr) {
+                var token = $('meta[name="csrf_token"]').attr('content');
+                if (token) {
+                    return xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                }
             },
-            success: function(data){
-                document.getElementById("cancelEventTransactionId").value = data['tdata'][0]['transactionID'];
-                $('#transactionModal').modal('hide');
-                $('#cancelEventModal').modal('show');
-            }, 
+            data: {
+                sendPaymentID: paymentID,
+                sendReceiveDate: receiveDate,
+                sendPaymentTerm: paymentTermID,
+                sendTransactionID: transactionID,
+                sendPaymentFee: paymentFee,
+                sendTransactionFee: transactionFee,
+                sendChecker: checker,
+                '_token': $('#token').val()
+            },               
+            success: function (response) {
+                location.reload();
+            },
             error: function(xhr)
             {
-                alert($.parseJSON(xhr.responseText)['error']['message']);
-            }                
-        });
-    }
-</script>
-
-<script>
-  $(function () {
-        $('#paymentDetailTbl').DataTable({
-          "paging": false,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": false,
-          "autoWidth": true
-        });
-        $('#rejectedReservationsTable').DataTable({
-          "paging": true,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": true,
-          "autoWidth": true
-        });
-        $('#pendingEventsTable').DataTable({
-          "paging": true,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": true,
-          "autoWidth": true
-        });
-        $('#onGoingEventsTable').DataTable({
-          "paging": true,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": true,
-          "autoWidth": true
-        });
-        $('#pendingPaymentsTable').DataTable({
-          "paging": true,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": true,
-          "autoWidth": true
-        });
-        $('#cancelledEventsTable').DataTable({
-          "paging": true,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": true,
-          "autoWidth": true
-        });
-        $('#equipmentTbl').DataTable({
-          "paging": false,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": false,
-          "autoWidth": true
-        });
-        $('#equipmentAssignTbl').DataTable({
-          "paging": false,
-          "lengthChange": false,
-          "searching": false,
-          "ordering": false,
-          "info": false,
-          "autoWidth": true
-        });
-        $('#equipmentAssessTbl').DataTable({
-            "paging": false,
-            "lengthChange": false,
-            "searching": false,
-            "ordering": false,
-            "info": false,
-            "autoWidth": true
-        });
-
-    });
-</script>
-
-<script>
-    function getReservation(id){
-        var frame1 = $('<iframe />');
-        frame1[0].name = "frame1";
-        frame1.css({ "position": "absolute", "top": "-1000000px" });
-        $("body").append(frame1);
-        var frameDoc = frame1[0].contentWindow ? frame1[0].contentWindow : frame1[0].contentDocument.document ? frame1[0].contentDocument.document : frame1[0].contentDocument;
-        frameDoc.document.open();
-        frameDoc.document.write('<html><head>');
-        frameDoc.document.write('</head><body>');
-        frameDoc.document.write('<style> .invoice-box{ max-width:800px; margin:auto; padding:30px; border:1px solid #eee; box-shadow:0 0 10px rgba(0, 0, 0, .15); font-size:16px; line-height:24px; font-family:"Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; color:#555; } .invoice-box table{ width:100%; line-height:inherit; text-align:left; } .invoice-box table td{ padding:5px; vertical-align:top; } .invoice-box table tr td:nth-child(2){ text-align:right; } .invoice-box table tr.top table td{ padding-bottom:20px; } .invoice-box table tr.top table td.title{ font-size:45px; line-height:45px; color:#333; } .invoice-box table tr.information table td{ padding-bottom:40px; } .invoice-box table tr.heading td{ background:#eee; border-bottom:1px solid #ddd; font-weight:bold; } .invoice-box table tr.details td{ padding-bottom:20px; } .invoice-box table tr.item td{ border-bottom:1px solid #eee; } .invoice-box table tr.item.last td{ border-bottom:none; } .invoice-box table tr.total td:nth-child(2){ border-top:2px solid #eee; font-weight:bold; } @media only screen and (max-width: 600px) { .invoice-box table tr.top table td{ width:100%; display:block; text-align:center; } .invoice-box table tr.information table td{ width:100%; display:block; text-align:center; } } </style>');
-        frameDoc.document.write('<html><body> <div > <table cellpadding="0" cellspacing="0"> <tr class="top"> <td colspan="2">   ');
-        frameDoc.document.write('<image src = "logo.png" align = "pullcenter"  width = "130" height = "100" style ="padding-left:10px"> ');
-        frameDoc.document.write('<p align = "Center">Margareth Catering Services </br> ');
-        frameDoc.document.write(' B4 L5 Ph7 JP Rizal St., New San Mateo Subd., Gitnangbayan I, San Mateo, Rizal </br> ');
-        frameDoc.document.write(' 696-4528 | (+63) 928-297-2321 | (+63) 907-208-3331 </br>');
-        frameDoc.document.write(' margarethcateringservices@gmail.com </p></br></br>');
-        frameDoc.document.write(' <p align= "right" style ="padding-right:16%">MM/DD/YYYY</p>');
-        frameDoc.document.write(' <p align = "left" style = "padding-left:20%">');
-        frameDoc.document.write(' Dear (client name),</br></br> ');
-        frameDoc.document.write(' </br>We recieved your inquiry and we would like confirm the agreement made during the phone conversation.</br> ');
-        frameDoc.document.write(' Thank you for making a reservation.');
-        frameDoc.document.write('     Here is the full details of your reservation. Kindly check if all the information is correct.</br>');
-        frameDoc.document.write(' </br></br></br>Event Date: ');
-        frameDoc.document.write(' </br>Event Time: ');
-        frameDoc.document.write(' </br>Event Name:');
-        frameDoc.document.write(' </br>Package Availed:');
-        frameDoc.document.write(' </br>Chosen Dish/Dishes: ');
-        frameDoc.document.write(' </br>Number of Guest:');
-        frameDoc.document.write(' </br>Add-ons:');
-        frameDoc.document.write(' </br>Service Availed:');
-        frameDoc.document.write(' </br>Location:</br>');
-        frameDoc.document.write(' </br>As agreed upon the first payment will be made at (date) and the second payment will be at (date).</br>');
-        frameDoc.document.write(' This letter will serve as our contract. For further question you can reach us in our phone number 696-4528</br>');
-        frameDoc.document.write(' (+63) 928-297-2321 | (+63) 907-208-3331or you can email us at margarethcateringservices@gmail.com</br>');
-        frameDoc.document.write(' </br></br></br>');
-        frameDoc.document.write('</div></body></html>');
-        frameDoc.document.close();
-        setTimeout(function () {
-            window.frames["frame1"].focus();
-            window.frames["frame1"].print();
-            frame1.remove();
-        }, 500);
-    }
-</script>
-
-<script>
-    $(document).ready(function() {
-        var table = $('#pendingEventsTable').DataTable();
-        $('#pendingEventsTable tbody').on('dblclick', 'tr', function () {
-            var today = new Date();
-            var dd = today.getDate();
-            var mm = today.getMonth()+1;
-            var yyyy = today.getFullYear();
-            if(dd<10){
-                dd='0'+dd;
-            } 
-            if(mm<10){
-                mm='0'+mm;
-            }
-            var newDate = yyyy+'-'+mm+'-'+dd;
-            var data = table.row( this ).data();
-            var transactionId = data[0];
-            var eventDate = data[4];
-            var packageID;
-            var eventID;
-            $.ajax({
-                type: "GET",
-                url:  "/RetrieveTransaction",
-                data:{     
-                    getId: transactionId
-                },
-                success: function(data){
-                    $('#parTransactionId').val(transactionId);
-                    $('#parReservationID').val(data['tdata'][0]['reservationID']);
-                    $('#parPackageID').val(data['tdata'][0]['packageID']);
-                    document.getElementById("parCustomerName").innerHTML = data['tdata'][0]['fullName'];
-                    document.getElementById("parContactNumber").innerHTML = data['tdata'][0]['cellNum'];
-                    document.getElementById("parEventName").innerHTML = data['tdata'][0]['eventName'];
-                    document.getElementById("parEventLocation").innerHTML = data['tdata'][0]['eventLocation'];
-                    document.getElementById("parAvailedPackage").innerHTML = data['tdata'][0]['packageName'];
-                    document.getElementById("parTotalFee").innerHTML = data['tdata'][0]['totalFee'];
-                    document.getElementById("parPaymentTerm").innerHTML = data['tdata'][0]['paymentTermName'];
-                    var checkDate = new Date(eventDate);
-                    var timeDiff = (checkDate.getTime() - today.getTime());
-                    var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                    if(diffDays <= 14 ){
-                        if(diffDays <= 0){
-                            document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
-                            document.getElementById('assignBtn').style.display='none';
-                            document.getElementById('paymentBtn').style.display='none';
-                            document.getElementById('assessmentBtn').style.display='block';
-                            document.getElementById('cancelBtn').style.display='none';
-                        }
-                        if(diffDays >= 1 && diffDays <= 7){
-                            if(data['tdata'][0]['transactionStatus'] == 1){
-                                document.getElementById("parPaymentStatus").innerHTML = "Pending";
-                                document.getElementById('assignBtn').style.display='block';
-                                document.getElementById('paymentBtn').style.display='block';
-                                document.getElementById('assessmentBtn').style.display='none';
-                                document.getElementById('cancelBtn').style.display='none';
-                            }    
-                            if(data['tdata'][0]['transactionStatus'] == 2){
-                                document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
-                                document.getElementById('assignBtn').style.display='block';
-                                document.getElementById('paymentBtn').style.display='none';
-                                document.getElementById('assessmentBtn').style.display='none';
-                                document.getElementById('cancelBtn').style.display='none';
-                            }    
-                        }
-                        if(diffDays >= 8 && diffDays <= 14){
-                            if(data['tdata'][0]['transactionStatus'] == 1){
-                                 document.getElementById("parPaymentStatus").innerHTML = "Pending";
-                                document.getElementById('assignBtn').style.display='block';
-                                document.getElementById('paymentBtn').style.display='block';
-                                document.getElementById('assessmentBtn').style.display='none';
-                                document.getElementById('cancelBtn').style.display='none';
-                            }
-                            if(data['tdata'][0]['transactionStatus'] == 2){
-                                document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
-                                document.getElementById('assignBtn').style.display='none';
-                                document.getElementById('paymentBtn').style.display='none';
-                                document.getElementById('assessmentBtn').style.display='none';
-                                document.getElementById('cancelBtn').style.display='none';
-                            }
-                        }
-                        
-                    }
-                    if(diffDays > 14){
-                        if(data['tdata'][0]['transactionStatus'] == 1){
-                            document.getElementById("parPaymentStatus").innerHTML = "Pending";
-                            document.getElementById('assignBtn').style.display='none';
-                            document.getElementById('paymentBtn').style.display='block';
-                            document.getElementById('assessmentBtn').style.display='none';
-                            document.getElementById('cancelBtn').style.display='block';
-                        }
-                        if(data['tdata'][0]['transactionStatus'] == 2){
-                            document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
-                            document.getElementById('assignBtn').style.display='none';
-                            document.getElementById('paymentBtn').style.display='none';
-                            document.getElementById('assessmentBtn').style.display='none';
-                            document.getElementById('cancelBtn').style.display='none';
-                        }
-                    }
-                    document.getElementById("parNumberOfGuest").innerHTML = data['tdata'][0]['guestCount'];
-                    packageID = data['tdata'][0]['packageID'];
-                    eventID = data['tdata'][0]['eventID'];
-                    $.ajax({
-                        type: "GET",
-                        url:  "/RetrievePackageInclusion",
-                        data:{
-                            sdid: packageID,
-                            sendReservationID: eventID
-                        },
-                        success: function(data){
-                            var additionalDishList = new Array;
-                            var additionalServiceList = new Array;
-                            var additionalEmployeeList = new Array;
-                            var additionalEquipmentList = new Array;
-                            if(data['additionalDish'].length > 0){
-                                for (var i = 0; i < data['additionalDish'].length; i++) {
-                                    additionalDishList = "[" + data['additionalDish'][i]['additionalServing'] + "] " + 
-                                    data['additionalDish'][i]['dishName'];
-                                }
-                            }
-                            else{
-                                additionalDishList = "";
-                            }
-                            if(data['additionalService'].length > 0){
-                                for (var i = 0; i < data['additionalService'].length; i++) {
-                                    additionalServiceList = "[" + data['additionalService'][i]['serviceAdditionalQty'] + "] " + 
-                                    data['additionalService'][i]['serviceName'];
-                                }
-                            }
-                            else{
-                                additionalServiceList = "";
-                            }
-                            if(data['additionalEquipment'].length > 0){
-                                for (var i = 0; i < data['additionalEquipment'].length; i++) {
-                                    additionalEquipmentList = "[" + data['additionalEquipment'][i]['equipmentAdditionalQty'] + "] " + 
-                                    data['additionalEquipment'][i]['equipmentName'];
-                                }
-                            }
-                            else{
-                                additionalEquipmentList = "";
-                            }
-                            if(data['additionalEmployee'].length > 0){
-                                for (var i = 0; i < data['additionalEmployee'].length; i++) {
-                                    additionalEmployeeList = "[" + data['additionalEmployee'][i]['employeeAdditionalQty'] + "] " + 
-                                    data['additionalEmployee'][i]['employeeTypeName'];
-                                }
-                            }
-                            else{
-                                additionalEmployeeList = "";
-                            }
-                            document.getElementById("parAdditionalItem").innerHTML = additionalDishList + " " + additionalEquipmentList + " " + additionalServiceList + " " + additionalEmployeeList;
-                            $("#transactionModal").modal("show");
-                        }, 
-                        error: function(xhr){
-                            alert($.parseJSON(xhr.responseText)['error']['message']);
-                        }                
-                    });
-                }, 
-                error: function(xhr){
-                    alert($.parseJSON(xhr.responseText)['error']['message']);
-                }                
-            });
-        });
-
-    $('#cancelEventForm').on('submit', function (e) {
-            e.preventDefault();
-            $.ajax({
-                url: '/CancelEvent',
-                type: 'POST',
-                data: {
-                    id: $('#cancelEventTransactionId').val()
-                },
-                success: function (result) {
-                    alert('success');
-                    window.location.href = "/TransactionPage"
-                },
-                error: function (result) {
-                    console.log(result);
-                }
-            });
+                alert("mali");
+            }                  
         });
     });
-</script>
-<!-- End of Scripts -->
+</script> 
+
+
 @endsection

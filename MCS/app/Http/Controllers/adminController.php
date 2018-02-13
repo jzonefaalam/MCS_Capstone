@@ -2715,18 +2715,81 @@ $uomData = DB::table('unitmeasurement_tbl')
             $transaction->transactionStatus = 2;
             $transaction->save();
         }
-        // if($paymentTermID == 2){
-        //     $transaction = transaction_tbl::find($transactionID);
-        //     $transaction->transactionStatus = 2;
-        //     $transaction->save();
-        // }
-        // if($paymentTermID == 3){
-        //     $transaction = transaction_tbl::find($transactionID);
-        //     $transaction->transactionStatus = 2;
-        //     $transaction->save();
-        // }
-        //Save to Transaction_tbl
+        if($paymentTermID == 2){
+            $transaction = transaction_tbl::find($transactionID);
+            $transaction->transactionStatus = 2;
+            $transaction->save();
+        }
+        if($paymentTermID == 3){
+            $transaction = transaction_tbl::find($transactionID);
+            $transaction->transactionStatus = 2;
+            $transaction->save();
+        }
+        // Save to Transaction_tbl
         return redirect()->back();
+    }
+
+    public function savePayment(){
+        $transactionID = Input::get('sendTransactionID');
+        $paymentTermID = Input::get('sendPaymentTerm');
+        $paymentID = Input::get('sendPaymentID');
+        $paymentRDate = Input::get('sendReceiveDate');
+        $checker = Input::get('sendChecker');
+        $paymentFee = Input::get('sendPaymentFee');
+        $transactionFee = Input::get('sendTransactionFee');
+        if($paymentTermID == 1){ //Full Payment
+            if($checker == 1){ //First Payment
+                $payment = payment_tbl::find($paymentID);
+                $payment->paymentReceiveDate = $paymentRDate;
+                $payment->paymentStatus = 1;
+                $payment->save();
+                    $transaction = transaction_tbl::find($transactionID);
+                    $transaction->transactionStatus = 2;
+                    $transaction->save();
+            }
+            if($checker == 2){ //Second Payment: Additional
+                $totalFee = $paymentFee + $transactionFee;
+                $payment = payment_tbl::find($paymentID);
+                $payment->paymentReceiveDate = $paymentRDate;
+                $payment->paymentStatus = 1;
+                $payment->save();
+                    $transaction = transaction_tbl::find($transactionID);
+                    $transaction->transactionStatus = 4;
+                    $transaction->totalFee = $totalFee;
+                    $transaction->save();
+            }
+        }
+        if($paymentTermID == 2 || $paymentTermID == 3){ //Half or 70-30
+            if($checker == 3){ //First Payment
+                $payment = payment_tbl::find($paymentID);
+                $payment->paymentReceiveDate = $paymentRDate;
+                $payment->paymentStatus = 1;
+                $payment->save();
+                    $transaction = transaction_tbl::find($transactionID);
+                    $transaction->transactionStatus = 3;
+                    $transaction->save();
+            }
+            if($checker == 4){ //Second Payment
+                $payment = payment_tbl::find($paymentID);
+                $payment->paymentReceiveDate = $paymentRDate;
+                $payment->paymentStatus = 1;
+                $payment->save();
+                    $transaction = transaction_tbl::find($transactionID);
+                    $transaction->transactionStatus = 2;
+                    $transaction->save();
+            }
+            if($checker == 5){ //Additional Payment
+                $payment = payment_tbl::find($paymentID);
+                $payment->paymentReceiveDate = $paymentRDate;
+                $payment->paymentStatus = 1;
+                $payment->save();
+                $totalFee = $paymentFee + $transactionFee;
+                    $transaction = transaction_tbl::find($transactionID);
+                    $transaction->transactionStatus = 4;
+                    $transaction->totalFee = $totalFee;
+                    $transaction->save();
+            }
+        }
     }
 
     public function savePayment1()
