@@ -30,9 +30,8 @@
             <div class="col-md-12">
                 <div class="nav-tabs-custom">
                     <ul class="nav nav-tabs">
-                        <li class="active"><a href="#tab_1" data-toggle="tab"> Pending Events</a></li> <!-- Reservation Status = 2  -->
                         <li><a href="#tab_2" data-toggle="tab">On Going Events</a></li> <!-- Event Date = Today's Date  -->
-                        <li><a href="#tab_3" data-toggle="tab">Payments</a></li> <!-- Transaction Status = 2   -->
+                        <li class="active"><a href="#tab_1" data-toggle="tab"> Pending Events</a></li> <!-- Reservation Status = 2  -->
                         <li><a href="#tab_4" data-toggle="tab">Completed Events</a></li> <!-- Transaction Status = 4  -->
                         <li><a href="#tab_5" data-toggle="tab">Cancelled Events</a></li> <!-- Transaction Status = 6  -->
                         <li><a href="#tab_6" data-toggle="tab">Rejected Reservations</a></li> <!-- Reservation status = 3  -->
@@ -58,7 +57,12 @@
                                                 <td>{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
                                                 <td>{{ $rrData->fullName }}</td>
+                                                <?php if (($rrData->locationID)==""): ?>
                                                 <td>{{ $rrData->eventLocation }}</td>
+                                                <?php endif ?>
+                                                <?php if (($rrData->locationID)!=""): ?>
+                                                <td>{{ $rrData->locationName }}</td>
+                                                <?php endif ?>
                                                 <td>{{ $rrData->eventDate }}</td>
                                                 <td>{{ $rrData->totalFee }}</td>
                                                 <?php if (($rrData->transactionStatus)==1): ?>
@@ -83,23 +87,30 @@
                             <table id="onGoingEventsTable" class="table table-bordered table-striped dataTable">
                                 <thead>
                                     <tr>
-                                        <th style="display: none;">Transaction #</th>
+                                        <th>Transaction #</th>
                                         <th>Event Name</th>
-                                        <th>Customer</th>
-                                        <th>Payment</th>
+                                        <th>Customer Name</th>
                                         <th>Event Date</th>
+                                        <th>Event Location</th>
+                                        <th>Number of Guests</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->eventDate)==date("Y-m-d") && ($rrData->transactionStatus==2)): ?> 
+                                        <?php if (($rrData->eventDate)==date("Y-m-d") && ( ($rrData->transactionStatus==2) || ($rrData->transactionStatus==3) ) ): ?> 
                                             <!-- Validation should be on the date of the event not the reservation status. -->
                                             <tr>
-                                                <td style="display: none;">{{ $rrData->transactionID }}</td>
+                                                <td>{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
                                                 <td>{{ $rrData->fullName }}</td>
-                                                <td>{{ $rrData->totalFee }}</td>
                                                 <td>{{ $rrData->eventDate }}</td>
+                                                <?php if (($rrData->locationID)==""): ?>
+                                                <td>{{ $rrData->eventLocation }}</td>
+                                                <?php endif ?>
+                                                <?php if (($rrData->locationID)!=""): ?>
+                                                <td>{{ $rrData->locationName }}</td>
+                                                <?php endif ?>
+                                                <td>{{ $rrData->guestCount }}</td>
                                             </tr>
                                         <?php endif ?>
                                     @endforeach
@@ -165,7 +176,7 @@
                                         <th style="display: none;">Transaction #</th>
                                         <th>Event Name</th>
                                         <th>Customer</th>
-                                        <th>Payment</th>
+                                        <th>Payment (Void)</th>
                                         <th>Event Date</th>
                                     </tr>
                                 </thead>
@@ -334,7 +345,7 @@
                                     <p class="form-control-static" id="parAvailedPackage" style="color: red; font-size: 16px"></p>
                                     <p class="form-control-static" id="parPackageID" style="color: red; font-size: 16px"></p>
                                 </div>
-                                <label class="control-label col-sm-6" for="email">Additional:</label>
+                                <label class="control-label col-sm-6" id="parAdditionalItemLbl" for="email">Additional:</label>
                                 <div class="col-sm-5">
                                     <p class="form-control-static" id="parAdditionalItem" style="color: red; font-size: 16px"></p>
                                 </div>
@@ -767,7 +778,6 @@
 <!-- Other Functions -->
 <script>
     $(document).ready(function() {
-        
         var table = $('#pendingEventsTable').DataTable();
         $('#pendingEventsTable tbody').on('dblclick', 'tr', function () {
             var today = new Date();
@@ -959,6 +969,100 @@
             });
         });
 
+        var completed_events_table = $('#completedEventsTable').DataTable();
+        $('#completedEventsTable tbody').on('dblclick', 'tr', function(){
+            var data = completed_events_table.row(this).data();
+            var transactionID = data[0];
+            $.ajax({
+                type: "GET",
+                url:  "/RetrieveTransaction",
+                data:{
+                    getId: transactionID
+                },
+                success: function(data){
+                    $('#parTransactionId').val(transactionID);
+                    $('#parReservationID').val(data['tdata'][0]['reservationID']);
+                    $('#parPackageID').val(data['tdata'][0]['packageID']);
+                    document.getElementById("parCustomerName").innerHTML = data['tdata'][0]['fullName'];
+                    document.getElementById("parContactNumber").innerHTML = data['tdata'][0]['cellNum'];
+                    document.getElementById("parEventName").innerHTML = data['tdata'][0]['eventName'];
+                    document.getElementById("parEventLocation").innerHTML = data['tdata'][0]['eventLocation'];
+                    document.getElementById("parAvailedPackage").innerHTML = data['tdata'][0]['packageName'];
+                    document.getElementById("parTotalFee").innerHTML = data['tdata'][0]['totalFee'];
+                    document.getElementById("parPaymentTerm").innerHTML = data['tdata'][0]['paymentTermName'];
+                    document.getElementById("parPaymentStatus").innerHTML = "Fully Paid";
+                    document.getElementById('assignBtn').style.display='none';
+                    document.getElementById('paymentBtn').style.display='none';
+                    document.getElementById('assessmentBtn').style.display='none';
+                    document.getElementById('cancelBtn').style.display='none';
+                    document.getElementById("parNumberOfGuest").innerHTML = data['tdata'][0]['guestCount'];
+                    packageID = data['tdata'][0]['packageID'];
+                    eventID = data['tdata'][0]['eventID'];
+                    $.ajax({
+                        type: "GET",
+                        url:  "/RetrievePackageInclusion",
+                        data:{
+                            sdid: packageID,
+                            sendReservationID: eventID
+                        },
+                        success: function(data){
+                            var additionalDishList = new Array;
+                            var additionalServiceList = new Array;
+                            var additionalEmployeeList = new Array;
+                            var additionalEquipmentList = new Array;
+                            if(data['additionalDish'].length > 0){
+                                for (var i = 0; i < data['additionalDish'].length; i++) {
+                                    additionalDishList = "[" + data['additionalDish'][i]['additionalServing'] + "] " + 
+                                    data['additionalDish'][i]['dishName'];
+                                }
+                            }
+                            else{
+                                additionalDishList = "";
+                            }
+                            if(data['additionalService'].length > 0){
+                                for (var i = 0; i < data['additionalService'].length; i++) {
+                                    additionalServiceList = "[" + data['additionalService'][i]['serviceAdditionalQty'] + "] " + 
+                                    data['additionalService'][i]['serviceName'];
+                                }
+                            }
+                            else{
+                                additionalServiceList = "";
+                            }
+                            if(data['additionalEquipment'].length > 0){
+                                for (var i = 0; i < data['additionalEquipment'].length; i++) {
+                                    additionalEquipmentList = "[" + data['additionalEquipment'][i]['equipmentAdditionalQty'] + "] " + 
+                                    data['additionalEquipment'][i]['equipmentName'];
+                                }
+                            }
+                            else{
+                                additionalEquipmentList = "";
+                            }
+                            if(data['additionalEmployee'].length > 0){
+                                for (var i = 0; i < data['additionalEmployee'].length; i++) {
+                                    additionalEmployeeList = "[" + data['additionalEmployee'][i]['employeeAdditionalQty'] + "] " + 
+                                    data['additionalEmployee'][i]['employeeTypeName'];
+                                }
+                            }
+                            else{
+                                additionalEmployeeList = "";
+                            }
+                            document.getElementById("parAdditionalItem").innerHTML = additionalDishList + " " + additionalEquipmentList + " " + additionalServiceList + " " + additionalEmployeeList;
+                            // $('#parAdditionalItem').css("display", "block");
+                            // $('#parAdditionalItemLbl').css("display", "block");
+                            document.getElementById("parAdditionalItem").innerHTML = "N/A";
+                            $("#transactionModal").modal("show");
+                        }, 
+                        error: function(xhr){
+                            alert($.parseJSON(xhr.responseText)['error']['message']);
+                        }                
+                    });
+                }, 
+                error: function(xhr){
+                    alert($.parseJSON(xhr.responseText)['error']['message']);
+                }                
+            });
+        });
+
         $('#cancelEventForm').on('submit', function (e) {
             e.preventDefault();
             $.ajax({
@@ -983,28 +1087,6 @@
 <!-- End of Scripts -->
 
 <script type="text/javascript">
-
-    function full_first(){
-        
-    }
-
-    function full_second(){
-        
-    }
-
-    // Full Payment
-    function submitPayment0(id){
-       
-    }
-
-    //Second Payment
-    function submitPayment1(id){
-        
-    }
-
-    //Second Payment
-    
-
     function getReservation(id){
         var frame1 = $('<iframe />');
         frame1[0].name = "frame1";
