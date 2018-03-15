@@ -8,7 +8,7 @@ TRANSACTION_STATUS
 	'2' = Fully Paid
 	'3'
 	'4'
-	'5'
+	'5' = Needs to Pay additional amount due to loss equipment
 	'6' = Denied Reservation
 
 PAYMENT_TERM

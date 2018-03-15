@@ -53,7 +53,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if ((($rrData->reservationStatus)==3) && ( ($rrData->transactionStatus==1)) || ($rrData->transactionStatus==2) ): ?>
+                                        <?php if ((($rrData->reservationStatus)==3) && (  ($rrData->transactionStatus==5) || ($rrData->transactionStatus==1) || ($rrData->transactionStatus==2) )): ?>
                                             <tr>
                                                 <td>{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
@@ -326,6 +326,7 @@
                                 <label class="control-label col-sm-6" for="email">Availed Package:</label>
                                 <div class="col-sm-5">
                                     <p class="form-control-static" id="parAvailedPackage" style="color: red; font-size: 16px"></p>
+                                    <p class="form-control-static" id="parPackageID" style="color: red; font-size: 16px"></p>
                                 </div>
                                 <label class="control-label col-sm-6" for="email">Additional:</label>
                                 <div class="col-sm-5">
@@ -358,6 +359,7 @@
                     </div>
                     <input type="text"  name="parTransactionId" id="parTransactionId" style="display: none;">
                     <input type="text"  name="parReservationID" id="parReservationID" style="display: none;">
+                    <input type="text"  name="parPackageID" id="parReservationID" style="display: none;">
                 </div>
                 <div class="modal-footer">
                     <a id="cancelBtn" data-toggle="modal" onclick="cancelEvent(document.getElementById('parTransactionId').value);" class="btn btn-app" type="submit" style=" float:right; display:none;">
@@ -585,6 +587,83 @@
     </div>
 <!-- End Submit Payment Form-->
 
+<!-- Asssessment MODAL -->
+  <form role="form" method="POST" class="form-horizontal" action="/AssessEquipment">
+    <div class="modal fade" id="assessmentModal" >
+      <div class="modal-dialog" style="width:50%;">
+        <div class="modal-content">
+          <div class="modal-body">
+            {!! csrf_field() !!}
+            <div class="row" align="center">
+              <div class="box box-danger" style="width:95%;">
+              <div class="box-body">
+                <div class="row">
+                  <div class="col-md-6" align="left">
+                    <label>Customer Name: </label>
+                    <div id="assessmentModalCustomerName" style="display: inline-block;">
+                      
+                    </div>
+                    <br>
+                    <label>Event Name: </label>
+                    <div id="assessmentModalEventName" style="display: inline-block;">
+                      
+                    </div>
+                    <br>
+                    <!-- <label>Event Date: </label> -->
+                    <input style="display:none;" type="text" id="assessmentModalReservationID" name="assessmentModalReservationID">
+                    <input style="display:none;" type="text" id="assessmentModalPackageID" name="assessmentModalPackageID">
+                    <input style="display:none;" type="text" id="assessmentTransactionID" name="assessmentTransactionID">
+                    <input style="display:none;" type="text" id="assessmentItemCtr" name="assessmentItemCtr">
+                    <input style="display:none;" type="text" id="assessmentAdditionalPayment" name="assessmentAdditionalPayment">
+                  </div>
+                  <div class="col-md-6" align="left">
+                    <label>Guest Count: </label>
+                    <div id="assessmentModalGuestCount" style="display: inline-block;">
+
+                    </div>
+                    <br>
+                    <label>Package Availed: </label>
+                    <div id="assessmentModalPackageName" style="display: inline-block;">
+                      
+                    </div>
+                    <br>
+                    <!-- <label>Event Location: </label> -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- End Box -->
+            </div>
+            <div class="row">
+              <table id="equipmentAssessTbl" class="table table-striped table-bordered" style="width:95%;" align="center">
+                  <thead>
+                    <tr>
+                      <th>Equipment Name</th>
+                      <th>Equipment Quantity</th>
+                      <th >Return Quantity</th>
+                      <th hidden>Return Quantity</th>
+                      <th hidden>Return Quantity</th>
+                      <th hidden>Return Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody id="equipmentAssessTblBody">
+
+                  </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+              <button id="saveAssessEquipment" class="btn btn-default" type="submit">
+                Save
+              </button>
+              <button type="button"  data-dismiss="modal"  data-toggle="modal" class="btn btn-default">Back</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+<!-- End -->
+
 </div>
 
 <!-- Scripts -->
@@ -594,10 +673,10 @@
 
 <script>
     $("#assignEquipmentBtn").click(function(e){
-    $("#eventModal").modal("hide");
-    var packageID = document.getElementById('assignEquipmentPackageID').value; 
-    var reservationID = document.getElementById('assignEquipmentReservationID').value;
-    $.ajax({
+        $("#eventModal").modal("hide");
+        var packageID = document.getElementById('assignEquipmentPackageID').value; 
+        var reservationID = document.getElementById('assignEquipmentReservationID').value;
+        $.ajax({
         type: "GET",
         url:  "/RetrieveAssignDetail",
         data: 
@@ -657,7 +736,27 @@
             alert($.parseJSON(xhr.responseText)['error']['message']);
         }                
       }); 
-  }); 
+    });
+
+     $("#saveAssessEquipment").click(function(e){
+        var itemCtr = document.getElementById('assessmentItemCtr').value;
+        // var reservationID = document.getElementById('assignModalReservationID').value;
+        var totalAmount = 0;
+        // alert()
+        for (var i = 0; i < itemCtr; i++) {
+        var abc = "assessReturnQty" + i;
+        var x = document.getElementById(abc).value;
+        var bcd = "assessAssignQty" + i; 
+        var xx = document.getElementById(bcd).value;
+        var diff = xx-x;
+        var cde = "assessEquipmentRatePerHour" + i;
+        var xxx = document.getElementById(cde).value;
+        if(diff>0){
+        totalAmount = totalAmount + (xxx * diff);
+        }
+        }
+        document.getElementById('assessmentAdditionalPayment').value = totalAmount;
+    }); 
 </script> 
 
 <script>
@@ -741,78 +840,62 @@
     }
 
     function assessmentEvent(id){
-        var reservationID = id;
-        var packageID;
+        var reservationID = document.getElementById('parReservationID').value;
+        var packageID = document.getElementById('parPackageID').value;
+        var transactionID = document.getElementById('parTransactionId').value;
+        var packageName = document.getElementById('parAvailedPackage').innerHTML;
+        var fullName = document.getElementById('parCustomerName').innerHTML;
+        var eventName = document.getElementById('parEventName').innerHTML;
+        var guestCount = document.getElementById('parNumberOfGuest').innerHTML;
+        document.getElementById('assessmentModalCustomerName').innerHTML = '<h6>'+fullName+'</h6>';
+        document.getElementById('assessmentModalPackageName').innerHTML = '<h6>'+packageName+'</h6>';
+        document.getElementById('assessmentModalGuestCount').innerHTML = '<h6>'+guestCount+'</h6>';
+        document.getElementById('assessmentModalEventName').innerHTML = '<h6>'+eventName+'</h6>';
+        document.getElementById('assessmentModalPackageID').value = packageID;
+        document.getElementById('assessmentModalReservationID').value = reservationID;
+        document.getElementById('assessmentTransactionID').value = transactionID
         $.ajax({
             type: "GET",
-            url:  "/RetrieveEventDetail",
-            data: {
+            url:  "/RetrieveAssignedEquipment",
+            data: 
+            {
                 sendReservationID: reservationID
             },
             success: function(data){
-                document.getElementById('eventModalCustomerName').innerHTML += '<h6>'+data['eventDetail'][0]['fullName']+'</h6>';
-                document.getElementById('eventModalEventName').innerHTML += '<h6>'+data['eventDetail'][0]['eventName']+'</h6>';
-                document.getElementById('eventModalEventDate').innerHTML += '<h6>'+data['eventDetail'][0]['eventDate']+'</h6>';
-                document.getElementById('eventModalCustomerNumber').innerHTML += '<h6>'+data['eventDetail'][0]['cellNum']+'</h6>';
-                document.getElementById('eventModalPackageAvailed').innerHTML += '<h6>'+data['eventDetail'][0]['packageName']+'</h6>';
-                document.getElementById('eventModalEventLocation').innerHTML += '<h6>'+data['eventDetail'][0]['eventLocation']+'</h6>';
-                document.getElementById('assignModalCustomerName').innerHTML += '<h6>'+data['eventDetail'][0]['fullName']+'</h6>';
-                document.getElementById('assignModalPackageName').innerHTML += '<h6>'+data['eventDetail'][0]['packageName']+'</h6>';
-                document.getElementById('assignModalGuestCount').innerHTML += '<h6>'+data['eventDetail'][0]['guestCount']+'</h6>';
-                document.getElementById('assignModalEventName').innerHTML += '<h6>'+data['eventDetail'][0]['eventName']+'</h6>';
-                document.getElementById('assignEquipmentPackageID').value = data['eventDetail'][0]['packageID'];
-                document.getElementById('assignEquipmentEventID').value = data['eventDetail'][0]['eventID'];
-                document.getElementById('assignEquipmentReservationID').value = reservationID;
-                var checkEventDate = data['eventDetail'][0]['eventDate'];
-                var today = new Date();
-                var dd = today.getDate();
-                var mm = today.getMonth()+1; //January is 0!
-                var yyyy = today.getFullYear();
-                if(dd<10) {
-                    dd = '0'+dd
-                } 
-                if(mm<10) {
-                    mm = '0'+mm
-                } 
-                today = yyyy + '-' + mm + '-' + dd;
-                var myDate = new Date(today);
-                var eventCheckDate = new Date(checkEventDate);
-                var timeDiff = eventCheckDate.getTime() - myDate.getTime();
-                var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                if(diffDays<0){
-                    var x = document.getElementById('assessEquipmentBtn');
-                    x.style.display = '';
-                    var y = document.getElementById('assignEquipmentBtn');
-                    y.style.display = 'none';
+                var assessItemName, assessAssignQty, assessReturnQty, assessItemID, assessEquipmentName, assessEquipmentRatePerHour;
+                var assessItemNameID, assessAssignQtyID, assessReturnQtyID, assessItemIDID, assessEquipmentNameID, assessEquipmentRatePerHourID;
+                var assessmentItemCtr = 0;
+                var tblSDet = $('#equipmentAssessTbl').DataTable();
+                tblSDet.clear();
+                tblSDet.draw(true);
+                for (var i = 0; i < data['ss'].length; i++) {
+                assessItemNameID = "assessItemName" + i;
+                assessItemIDID = "assessItemID" + i;
+                assessReturnQtyID = "assessReturnQty" + i;
+                assessEquipmentNameID = "assessEquipmentNameID" + i;
+                assessAssignQtyID = "assessAssignQty" + i;
+                assessEquipmentRatePerHourID = "assessEquipmentRatePerHour" + i;
+                assessItemName = data['ss'][i]['equipmentName'];
+                assessAssignQty = '<input disabled value="' + data['ss'][i]['assignEquipmentQty'] + '" id="'+ assessAssignQtyID +'" name="'+assessAssignQtyID+'">' ;
+                assessReturnQty = '<input class="col-md-10"  name="'+assessReturnQtyID+'"  required type="number" min="0" max="'+ data['ss'][i]['assignEquipmentQty'] +'" id="'+ assessReturnQtyID +'">';
+                assessItemID = '<input name="'+assessItemIDID+'" hidden id="'+ assessItemIDID +'" value="'+ data['ss'][i]['assignEquipmentID'] +'"/>';
+                assessEquipmentName = '<input name="'+assessEquipmentNameID+'" hidden id="'+ assessEquipmentNameID +'" value="'+ data['ss'][i]['equipmentID'] +'"/>';
+                assessEquipmentRatePerHour = '<input name="'+assessEquipmentRatePerHourID+'" hidden id="'+ assessEquipmentRatePerHourID +'" value="'+ data['ss'][i]['equipmentRatePerHour'] +'"/>';
+                tblSDet.row.add([
+                assessItemName,
+                assessAssignQty,
+                assessReturnQty,
+                assessItemID,
+                assessEquipmentName,
+                assessEquipmentRatePerHour
+                ]).draw(true);
+                assessmentItemCtr = assessmentItemCtr + 1;
                 }
-                $.ajax({
-                    type: "GET",
-                    url:  "/RetrieveAssignedEquipment",
-                    data:{
-                        sendReservationID: reservationID
-                    },
-                    success: function(data){
-                        var equipmentName, equipmentQty;
-                        var tblSDet = $('#equipmentTbl').DataTable();
-                        tblSDet.clear();
-                        tblSDet.draw(true);
-                        for (var i = 0; i < data['ss'].length; i++) {
-                            equipmentName = data['ss'][i]['equipmentName'];
-                            equipmentQty = data['ss'][i]['assignEquipmentQty'];
-                            tblSDet.row.add([
-                                equipmentName,
-                                equipmentQty,
-                            ]).draw(true);
-                        }
-                        $("#transactionModal").modal("hide");
-                        $("#eventModal").modal("show");
-                    },
-                    error: function(xhr){
-                        alert($.parseJSON(xhr.responseText)['error']['message']);
-                    }                
-                });
+                document.getElementById('assessmentItemCtr').value = assessmentItemCtr;
+                $("#assessmentModal").modal("show"); 
             },
-            error: function(xhr){
+            error: function(xhr)
+            {
                 alert("mali");
                 alert($.parseJSON(xhr.responseText)['error']['message']);
             }                
@@ -844,7 +927,7 @@
                 '_token': $('#token').val()
             },               
             success: function (response) {
-                alert('Success!')
+                location.reload();
             },
             error: function(xhr)
             {
@@ -1072,6 +1155,14 @@
           "info": false,
           "autoWidth": true
         });
+        $('#equipmentAssessTbl').DataTable({
+            "paging": false,
+            "lengthChange": false,
+            "searching": false,
+            "ordering": false,
+            "info": false,
+            "autoWidth": true
+        });
 
     });
 </script>
@@ -1151,6 +1242,7 @@
                 success: function(data){
                     $('#parTransactionId').val(transactionId);
                     $('#parReservationID').val(data['tdata'][0]['reservationID']);
+                    $('#parPackageID').val(data['tdata'][0]['packageID']);
                     document.getElementById("parCustomerName").innerHTML = data['tdata'][0]['fullName'];
                     document.getElementById("parContactNumber").innerHTML = data['tdata'][0]['cellNum'];
                     document.getElementById("parEventName").innerHTML = data['tdata'][0]['eventName'];
