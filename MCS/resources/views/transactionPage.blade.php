@@ -34,7 +34,7 @@
                         <li><a href="#tab_2" data-toggle="tab">On Going Events</a></li> <!-- Event Date = Today's Date  -->
                         <li><a href="#tab_3" data-toggle="tab">Payments</a></li> <!-- Transaction Status = 2   -->
                         <li><a href="#tab_4" data-toggle="tab">Completed Events</a></li> <!-- Transaction Status = 4  -->
-                        <li><a href="#tab_5" data-toggle="tab">Cancelled Events</a></li> <!-- Transaction Status = 3  -->
+                        <li><a href="#tab_5" data-toggle="tab">Cancelled Events</a></li> <!-- Transaction Status = 6  -->
                         <li><a href="#tab_6" data-toggle="tab">Rejected Reservations</a></li> <!-- Reservation status = 3  -->
                     </ul>
                     <div class="tab-content">
@@ -171,7 +171,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->transactionStatus)==6): ?>
+                                        <?php if ($rrData->reservationStatus==3 && $rrData->transactionStatus == 6): ?>
                                             <tr>
                                                 <td style="display: none;">{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>
@@ -197,7 +197,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($rejectedReservations as $rrData)
-                                        <?php if (($rrData->transactionStatus)==6): ?>
+                                        <?php if ($rrData->reservationStatus==2 && $rrData->transactionStatus == 6): ?>
                                             <tr>
                                                 <td style="display: none;">{{ $rrData->transactionID }}</td>
                                                 <td>{{ $rrData->eventName }}</td>

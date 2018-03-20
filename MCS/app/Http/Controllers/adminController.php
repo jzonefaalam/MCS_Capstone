@@ -1683,7 +1683,7 @@ class adminController extends Controller
         return \Response::json(['ss'=>$ss, 'ww'=>$ww, 'gg'=>$gg, 'ff'=>$ff, 'dd'=>$dd, 'additionalDish'=>$additionalDish, 'additionalEquipment'=>$additionalEquipment, 'additionalService'=>$additionalService, 'additionalEmployee'=>$additionalEmployee, 'dishTypeData'=>$dishTypeData, 'dishData'=>$dishData, 'dishInclusion'=>$dishInclusion]);
     }
     public function assignRetrieve(){
-         $ass =  Input::get('sdid'); 
+        $ass =  Input::get('sdid'); 
         $stmt = "SELECT equipment_tbl.`equipmentName`, equipment_tbl.`equipmentID`, SUM(equipmentlog_tbl.`equipmentQuantityIn`) as qtyIn FROM equipment_tbl, equipmenttype_tbl, equipmentlog_tbl, packageinclusion_tbl WHERE equipment_tbl.`equipmentID` = packageinclusion_tbl.`equipmentID` AND equipment_tbl.`equipmentTypeID` = equipmenttype_tbl.`equipmentTypeID` AND equipment_tbl.`equipmentID` = equipmentlog_tbl.`equipmentID` AND packageinclusion_tbl.`packageID` = '$ass' GROUP BY equipment_tbl.`equipmentName`, equipment_tbl.`equipmentID` ";
         $rr = DB::select($stmt);
 
@@ -2531,20 +2531,16 @@ $uomData = DB::table('unitmeasurement_tbl')
     }
 
     public function retrieveUpcomingEvents(){
-        $latestEvents = DB::table('reservation_tbl')
-        ->join('event_tbl','reservation_tbl.eventID','=','event_tbl.eventID')
+        $latestEvents =  DB::table('transaction_tbl')
+        ->join('reservation_tbl','reservation_tbl.reservationID','=','transaction_tbl.reservationID')
+        ->join('event_tbl','event_tbl.eventID','=','reservation_tbl.eventID')
         ->join('customer_tbl','customer_tbl.customerID','=','event_tbl.customerID')
-        ->join('package_tbl','reservation_tbl.packageID','=','package_tbl.packageID')
-        ->join('payment_tbl', 'payment_tbl.reservationID','=','reservation_tbl.reservationID')
-        ->join('transaction_tbl', 'transaction_tbl.reservationID', '=', 'reservation_tbl.reservationID')
-        ->select('reservation_tbl.*','event_tbl.*','customer_tbl.*','package_tbl.*','transaction_tbl.*')
-        ->distinct()
-        ->where('reservation_tbl.reservationStatus', 2)
-        ->where('payment_tbl.paymentStatus', 1)
-        ->where('transaction_tbl.transactionStatus', '!=', 3)
-        ->where('transaction_tbl.transactionStatus', '!=', 5)
+        ->select('transaction_tbl.*', 'reservation_tbl.*','event_tbl.*','customer_tbl.*')
+        ->where('reservation_tbl.reservationStatus', '!=', 1)
         ->where('transaction_tbl.transactionStatus', '!=', 4)
-        ->get();
+        ->where('transaction_tbl.transactionStatus', '!=', 6)
+        ->where('transaction_tbl.transactionStatus', '!=', 1)
+        ->get();  
         return \Response::json(['latestEvents'=>$latestEvents]);
     }
 
@@ -2591,10 +2587,10 @@ $uomData = DB::table('unitmeasurement_tbl')
         ->join('customer_tbl','event_tbl.customerID','=','customer_tbl.customerID')
         ->join('transaction_tbl', 'transaction_tbl.reservationID', '=', 'reservation_tbl.reservationID')
         ->select('reservation_tbl.*','event_tbl.*','customer_tbl.*','package_tbl.*','transaction_tbl.*')
-        ->where('transaction_tbl.transactionStatus', '!=', 3)
+        ->where('transaction_tbl.transactionStatus', '!=', 6)
         ->where('transaction_tbl.transactionStatus', '!=', 4)
-        ->where('transaction_tbl.transactionStatus', '!=', 1)
-        ->where('reservation_tbl.reservationStatus', 2)
+        ->where('transaction_tbl.transactionStatus', '!=', 2)
+        ->where('reservation_tbl.reservationStatus', 3)
         ->get();
           
         return View::make('/dashboardPage')
@@ -2717,12 +2713,12 @@ $uomData = DB::table('unitmeasurement_tbl')
         }
         if($paymentTermID == 2){
             $transaction = transaction_tbl::find($transactionID);
-            $transaction->transactionStatus = 2;
+            $transaction->transactionStatus = 3;
             $transaction->save();
         }
         if($paymentTermID == 3){
             $transaction = transaction_tbl::find($transactionID);
-            $transaction->transactionStatus = 2;
+            $transaction->transactionStatus = 3;
             $transaction->save();
         }
         // Save to Transaction_tbl
@@ -2817,13 +2813,13 @@ $uomData = DB::table('unitmeasurement_tbl')
 
         if($paymentTermID == 2){
             $transaction = transaction_tbl::find($transactionID);
-            $transaction->transactionStatus = 1;
+            $transaction->transactionStatus = 2;
             $transaction->save();
         }
 
         if($paymentTermID == 3){
             $transaction = transaction_tbl::find($transactionID);
-            $transaction->transactionStatus = 1;
+            $transaction->transactionStatus = 2;
             $transaction->save();
         }
         
@@ -2996,8 +2992,6 @@ $uomData = DB::table('unitmeasurement_tbl')
         ->join('customer_tbl','event_tbl.customerID','=','customer_tbl.customerID')
         ->join('transaction_tbl', 'transaction_tbl.reservationID', '=', 'reservation_tbl.reservationID')
         ->select('reservation_tbl.*','event_tbl.*','customer_tbl.*','package_tbl.*','transaction_tbl.*')
-        ->where('transaction_tbl.transactionStatus', '!=', 3)
-        ->where('reservation_tbl.reservationStatus', '=', 2)
         ->get();
         return \Response::json(['rsvtn'=>$rsvtn]);
     }
@@ -3197,7 +3191,7 @@ $uomData = DB::table('unitmeasurement_tbl')
     public function cancelEvent(){
         $transactionID = Input::get('cancelEventTransactionId');
         $transaction = transaction_tbl::find($transactionID); 
-        $transaction->transactionStatus = 3; 
+        $transaction->transactionStatus = 6; 
         $transaction->save();
         return redirect()->back();
 

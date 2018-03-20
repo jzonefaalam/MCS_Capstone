@@ -229,10 +229,26 @@
                       <tr>
                           <td>
                             <a >{{ $latestPayments -> eventName}}</a>
-                            <small style="width: 100px;" class="label label-warning pull-right">
-                              <i class="fa fa-calendar-o"></i> 
-                              {{ $latestPayments->eventTime }}
-                            </small>
+                            <?php if ( ($latestPayments->transactionStatus) == 1 ): ?> 
+                              <small style="width: 100px;" class="label label-warning pull-right">
+                                Pending Payment
+                              </small>
+                            <?php endif ?>
+                            <?php if ( ($latestPayments->transactionStatus) == 2 ): ?> 
+                              <small style="width: 100px;" class="label label-warning pull-right">
+                                Fully Paid
+                              </small>
+                            <?php endif ?>
+                            <?php if ( ($latestPayments->transactionStatus) == 3 ): ?> 
+                              <small style="width: 100px;" class="label label-warning pull-right">
+                                Half Paid
+                              </small>
+                            <?php endif ?>
+                            <?php if ( ($latestPayments->transactionStatus) == 5 ): ?> 
+                              <small style="width: 100px;" class="label label-warning pull-right">
+                                Pending: Additional Payment
+                              </small>
+                            <?php endif ?>
                           </td>
                           <td style="display: none;">{{ $latestPayments->reservationID }}</td>
                           <td style="display: none;">{{ $latestPayments->eventID }}</td>
@@ -755,7 +771,7 @@
             </div>
           </div>
           <div class="modal-footer">
-              <button id="assignEquipmentBtn" onclick="getEquipmentDetails();" class="btn btn-primary" type="button">
+              <button id="assignEquipmentBtn" class="btn btn-primary" type="button">
                 Assign Equipment
               </button>
               <button id="assessEquipmentBtn" type="button" href="#" style="display: none;" class="btn btn-default">Assessment of Equipment</button>
@@ -843,84 +859,75 @@
   </form>
   <!-- End -->
 
-  <!-- Assign Modal Modal -->
-  <form id="assignForm" role="form" method="POST" action="/AssignEquipment" class="form-horizontal">
+<!-- Assign Modal -->
+<form id="assignForm" role="form" method="POST" action="/AssignEquipment" class="form-horizontal">
     <div class="modal fade" id="assignEquipmentModal" >
-      <div class="modal-dialog" style="width:50%;">
-        <div class="modal-content">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h4 class="modal-title" id="upcomingEventModal">Assign Equipment</h4>
-            </div>
-          <div class="modal-body">
-            {!! csrf_field() !!}
-            <div class="row" align="center" style="width: 97%; padding-left: 7%">
-              <div class="box box-danger">
-              <div class="box-body">
-                <div class="row" style="padding-left: 9%">
-                  <div class="col-md-6" align="left">
-                    <label>Customer Name: </label>
-                    <div id="assignEquipmentCustomerName" style="display: inline-block;">
-                      
-                    </div>
-                    <br>
-                    <label>Event Name: </label>
-                    <div id="assignEquipmentEventName" style="display: inline-block;">
-                      
-                    </div>
-                    <br>
-                    <!-- <label>Event Date: </label> -->
-                    <input style="display:none;" type="text" id="assignEquipmentReservationID" name="assignEquipmentReservationID">
-                    <input style="display:none;" type="text" id="assignEquipmentPackageID" name="assignEquipmentPackageID">
-                    <input style="display:none;" type="text" id="assignEquipmentEventID" name="assignEquipmentEventID">
-                    <input style="display:none;" type="text" id="addItemCtr" name="addItemCtr">
-                    <input style="display:none;" type="text" id="additionalItemCtr" name="additionalItemCtr">
-                  </div>
-                  <div class="col-md-6" align="left">
-                    <label>Guest Count: </label>
-                    <div id="assignEquipmentGuestCount" style="display: inline-block;">
-
-                    </div>
-                    <br>
-                    <label>Package Availed: </label>
-                    <div id="assignEquipmentPackageName" style="display: inline-block;">
-                      
-                    </div>
-                    <br>
-                    <!-- <label>Event Location: </label> -->
-                  </div>
+        <div class="modal-dialog" style="width:70%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    Assigning Equipment Modal
                 </div>
-              </div>
-            </div>
-            <!-- End Box -->
-            </div>
-            <div class="row">
-              <table id="equipmentAssignTbl" class="table table-striped table-bordered" style="width:85%;" align="center">
-                  <thead>
-                    <tr>
-                      <th style="width: 250px">Equipment Name</th>
-                      <th style="width: 200px">Equipment Quantity</th>
-                      <th style="display: none;">Equipment ID</th>
-                      <th style="width: 200px">Remaining Quantity</th>
-                    </tr>
-                  </thead>
-                  <tbody id="equipmentAssignTblBody">
+                <div class="modal-body">
+                    {!! csrf_field() !!}
+                    <div class="row" align="center">
+                        <div class="box" style="width:95%;">
+                            <div class="box-body">
+                                <div class="row">
+                                    <div class="col-md-6" align="left">
+                                       <!--  <label>Customer Name: </label>
+                                        <div id="assignModalCustomerName" style="display: inline-block;">
+                          
+                                        </div><br>
+                                        <label>Event Name: </label>
+                                        <div id="assignModalEventName" style="display: inline-block;">
+                                          
+                                        </div><br> -->
+                                        <input style="display:none;" type="text" id="assignEquipmentReservationID" name="assignEquipmentReservationID">
+                                        <input style="display:none;" type="text" id="assignEquipmentPackageID" name="assignEquipmentPackageID">
+                                        <input style="display:none;" type="text" id="assignEquipmentEventID" name="assignEquipmentEventID">
+                                        <input style="display:none;" type="text" id="addItemCtr" name="addItemCtr">
+                                        <input style="display:none;" type="text" id="additionalItemCtr" name="additionalItemCtr">
+                                    </div>
+                                    <!-- <div class="col-md-6" align="left">
+                                        <label>Guest Count: </label>
+                                        <div id="assignModalGuestCount" style="display: inline-block;">
 
-                  </tbody>
-              </table>
+                                        </div>
+                                        <br>
+                                        <label>Package Availed: </label>
+                                        <div id="assignModalPackageName" style="display: inline-block;">
+                                          
+                                        </div><br>
+                                    </div> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <table id="equipmentAssignTbl" class="table table-striped table-bordered" style="width:95%;" align="center">
+                            <thead>
+                                <tr>
+                                    <th>Equipment Name</th>
+                                    <th>Equipment Quantity</th>
+                                    <th style="display: none;">Equipment ID</th>
+                                    <th style="width: 200px">Remaining Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipmentAssignTblBody">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="submitAssignEquipmentBtn" class="btn btn-default" type="submit">Save</button>
+                    <button type="button" href="#" class="btn btn-default">Back</button>
+                </div>
             </div>
-          </div>
-          <div class="modal-footer">
-              <button class="btn btn-success" type="submit">
-                Save
-              </button>
-              <!-- <button type="button" href="#" class="btn btn-default">Back</button> -->
-          </div>
         </div>
-      </div>
     </div>
-  </form>
-  <!-- End -->
+</form>
+<!-- End of Assign Modal -->
 
   <!-- Payment Modal -->
   <form id="paymentForm" role="form" method="POST" action="#" class="form-horizontal">
@@ -1078,14 +1085,9 @@
 <!-- Render of Event Table -->
 <script>
   window.onload = function() {
-    var id = "";
     $.ajax({
       type: "GET",
       url:  "/RetrieveUpcomingEvents",
-      data: 
-      {
-          sdid: id
-      },
       success: function(data){
           var tblSDet = $('#eventTable').DataTable();
           var latestEventStatus;
@@ -1097,13 +1099,13 @@
             latestEventStatus = data['latestEvents'][i]['eventStatus'];
             var checkDate = new Date(latestEventDate);
             var today = new Date();
-            var timeDiff = Math.abs(checkDate.getTime() - today.getTime());
+            var timeDiff = (checkDate.getTime() - today.getTime());
             var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
             // alert(diffDays);
-              if(diffDays < 8 && diffDays >  0){
+              if(diffDays < 8){
                 latestEventName = data['latestEvents'][i]['eventName'];
                 latestReservationID = data['latestEvents'][i]['reservationID'];
-                latestPackageID = data['latestEvents'][i]['packageID'];
+                latestPackageID = data['latestEvents'][i]['transactionID'];
                 latestCustomerID = data['latestEvents'][i]['customerID'];
                 latestEventID = data['latestEvents'][i]['eventID'];
                 latestEventTime = data['latestEvents'][i]['eventTime'];
@@ -1262,7 +1264,6 @@
           }
           document.getElementById('addItemCtr').value = addItemCounter;
           document.getElementById('additionalItemCtr').value = additionalItemCounter;
-          // alert('zxc');
           $("#assignEquipmentModal").modal("show"); 
         },
         error: function(xhr)
@@ -1593,7 +1594,6 @@
       var eventModalPackageID = data[3];
       var eventModalCustomerID = data[4];
       var transactionStatus;
-      // alert(eventModalReservationID);
       $.ajax({
         type: "GET",
         url:  "/RetrieveEventDetail",
@@ -1609,10 +1609,10 @@
           document.getElementById('eventModalPackageAvailed').innerHTML += '<h6>'+data['eventDetail'][0]['packageName']+'</h6>';
           document.getElementById('eventModalEventLocation').innerHTML += '<h6>'+data['eventDetail'][0]['eventLocation']+'</h6>';
           // ASSIGN
-          document.getElementById('assignEquipmentCustomerName').innerHTML = '<h6>'+data['eventDetail'][0]['fullName']+'</h6>';
-          document.getElementById('assignEquipmentPackageName').innerHTML = '<h6>'+data['eventDetail'][0]['packageName']+'</h6>';
-          document.getElementById('assignEquipmentGuestCount').innerHTML = '<h6>'+data['eventDetail'][0]['guestCount']+'</h6>';
-          document.getElementById('assignEquipmentEventName').innerHTML = '<h6>'+data['eventDetail'][0]['eventName']+'</h6>';
+          // document.getElementById('assignEquipmentCustomerName').innerHTML = '<h6>'+data['eventDetail'][0]['fullName']+'</h6>';
+          // document.getElementById('assignEquipmentPackageName').innerHTML = '<h6>'+data['eventDetail'][0]['packageName']+'</h6>';
+          // document.getElementById('assignEquipmentGuestCount').innerHTML = '<h6>'+data['eventDetail'][0]['guestCount']+'</h6>';
+          // document.getElementById('assignEquipmentEventName').innerHTML = '<h6>'+data['eventDetail'][0]['eventName']+'</h6>';
           document.getElementById('assignEquipmentPackageID').value = eventModalPackageID;
           document.getElementById('assignEquipmentReservationID').value = eventModalReservationID;
           document.getElementById('assignEquipmentEventID').value = data['eventDetail'][0]['eventID'];
@@ -1629,13 +1629,6 @@
           var checkEventDate = data['eventDetail'][0]['eventDate'];
           transactionStatus = data['eventDetail'][0]['transactionStatus'];
           var checkEventStatus = data['eventDetail'][0]['eventStatus'];
-          if(transactionStatus == 1){
-            document.getElementById('assignEquipmentBtn').style.display='none';
-          }
-          if(transactionStatus == 6){
-            document.getElementById('assignEquipmentBtn').style.display='';
-            document.getElementById('assessEquipmentBtn').style.display='none';
-          }
           var today = new Date();
           var dd = today.getDate();
           var mm = today.getMonth()+1; //January is 0!
@@ -1650,28 +1643,22 @@
           var myDate = new Date(today);
           var eventCheckDate = new Date(checkEventDate);
           var timeDiff = eventCheckDate.getTime() - myDate.getTime();
-          // alert(timeDiff);
           var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-          // alert(diffDays);
-          // alert(checkEventStatus);
-          // alert(transactionStatus);
-
-          //  Wala pang nassign na equipment
-          if(checkEventStatus == 1){
-              var x = document.getElementById('assessEquipmentBtn');
+          if(diffDays < 8 && diffDays > 0){
+            if(transactionStatus == 2 || transactionStatus == 3){
+                var x = document.getElementById('assessEquipmentBtn');
                 x.style.display = 'none';
-              var y = document.getElementById('assignEquipmentBtn');
-                y.style.display = '';
-          }
-          // May na assign na
-          if(checkEventStatus == 2){
-            // Kapag 0 lagpas na sa date so dapat visible na
-            if(diffDays <= 0 ){
-              var x = document.getElementById('assessEquipmentBtn');
-                x.style.display = '';
+                var y = document.getElementById('assignEquipmentBtn');
+                y.style.display = 'block';
             }
+          }
+          if(diffDays <= 0){
+            if(transactionStatus == 2){
+              var x = document.getElementById('assessEquipmentBtn');
+              x.style.display = 'block';
               var y = document.getElementById('assignEquipmentBtn');
               y.style.display = 'none';
+            }
           }
           $.ajax({
             type: "GET",
