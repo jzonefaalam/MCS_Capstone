@@ -189,7 +189,7 @@
           <div class="box box-danger">
             <div class="box-header">
               <i class="ion ion-clipboard"></i>
-              <h3 class="box-title">NOTIFICATIONS</h3>
+              <h3 class="box-title">asdasdas</h3>
               <div class="box-tools pull-right">
               </div>
             </div>
@@ -1613,7 +1613,7 @@
           // document.getElementById('assignEquipmentPackageName').innerHTML = '<h6>'+data['eventDetail'][0]['packageName']+'</h6>';
           // document.getElementById('assignEquipmentGuestCount').innerHTML = '<h6>'+data['eventDetail'][0]['guestCount']+'</h6>';
           // document.getElementById('assignEquipmentEventName').innerHTML = '<h6>'+data['eventDetail'][0]['eventName']+'</h6>';
-          document.getElementById('assignEquipmentPackageID').value = eventModalPackageID;
+          document.getElementById('assignEquipmentPackageID').value = data['eventDetail'][0]['packageID'];
           document.getElementById('assignEquipmentReservationID').value = eventModalReservationID;
           document.getElementById('assignEquipmentEventID').value = data['eventDetail'][0]['eventID'];
           // ASSESSMENT
@@ -1656,6 +1656,12 @@
             if(transactionStatus == 2){
               var x = document.getElementById('assessEquipmentBtn');
               x.style.display = 'block';
+              var y = document.getElementById('assignEquipmentBtn');
+              y.style.display = 'none';
+            }
+            if(transactionStatus == 3){
+              var x = document.getElementById('assessEquipmentBtn');
+              x.style.display = 'none';
               var y = document.getElementById('assignEquipmentBtn');
               y.style.display = 'none';
             }

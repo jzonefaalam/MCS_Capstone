@@ -2540,6 +2540,7 @@ $uomData = DB::table('unitmeasurement_tbl')
         ->where('transaction_tbl.transactionStatus', '!=', 4)
         ->where('transaction_tbl.transactionStatus', '!=', 6)
         ->where('transaction_tbl.transactionStatus', '!=', 1)
+        ->where('transaction_tbl.transactionStatus', '!=', 5)
         ->get();  
         return \Response::json(['latestEvents'=>$latestEvents]);
     }
